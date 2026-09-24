@@ -189,7 +189,12 @@ func New(config Config) (*Auth, error) {
 		allowed[redirect] = struct{}{}
 	}
 
-	key := sha256.Sum256([]byte(config.SessionSecret))
+	instanceNonce := make([]byte, 32)
+	if _, err := io.ReadFull(config.Random, instanceNonce); err != nil {
+		return nil, fmt.Errorf("generate cookie instance nonce: %w", err)
+	}
+	keyMaterial := append([]byte(config.SessionSecret), instanceNonce...)
+	key := sha256.Sum256(keyMaterial)
 	block, err := aes.NewCipher(key[:])
 	if err != nil {
 		return nil, fmt.Errorf("create cookie cipher: %w", err)
@@ -286,12 +291,6 @@ func (a *Auth) CallbackHandler(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, "X verification has expired. Please start again.")
 		return
 	}
-	if !a.consumeTransaction(tx.State, tx.ExpiresAt) {
-		a.clearCookie(w, transactionCookieName)
-		writeError(w, http.StatusBadRequest, "X verification was already used. Please start again.")
-		return
-	}
-	a.clearCookie(w, transactionCookieName)
 
 	var callback callbackRequest
 	if err := decodeJSON(r.Body, &callback); err != nil {
@@ -308,6 +307,12 @@ func (a *Auth) CallbackHandler(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, "Invalid X callback URL.")
 		return
 	}
+	if !a.consumeTransaction(tx.State, tx.ExpiresAt) {
+		a.clearCookie(w, transactionCookieName)
+		writeError(w, http.StatusBadRequest, "X verification was already used. Please start again.")
+		return
+	}
+	a.clearCookie(w, transactionCookieName)
 
 	token, err := a.exchangeCode(r.Context(), callback.Code, tx.Verifier, callback.RedirectURI)
 	if err != nil {

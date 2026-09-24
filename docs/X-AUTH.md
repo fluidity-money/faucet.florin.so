@@ -4,7 +4,7 @@ The Go service now implements the X OAuth 2.0 Authorization Code flow with PKCE 
 
 The browser never receives the X client secret or bearer token. OAuth transaction data and the short-lived X access token are encrypted with AES-GCM inside purpose-bound HttpOnly cookies. OAuth state is also consumed in a concurrency-safe in-memory replay cache before code exchange, and logout revokes the session ID until its expiry. The callback checks the follow relationship before establishing a session, and the GraphQL claim path checks the relationship again immediately before a claim.
 
-The replay/revocation cache is process-local because the service currently runs as one Unix-socket process. If the service is later replicated, move those two expiry maps to shared storage such as Postgres or Redis before running more than one instance.
+The replay/revocation cache is process-local because the service currently runs as one Unix-socket process. Each process start mixes a fresh random generation nonce into the cookie-encryption key, so a restart invalidates every prior session and in-progress OAuth transaction rather than reviving revoked cookies. If the service is later replicated, move session/replay state to shared storage such as Postgres or Redis before running more than one instance.
 
 ## X developer-console setup
 
@@ -96,7 +96,7 @@ The handler:
 5. resolves the required account ID if it was not pinned in configuration;
 6. paginates `GET /2/users/:id/following` until it finds `@florinprotocol` or exhausts the result set;
 7. refuses non-followers with HTTP 403;
-8. creates an encrypted `florin_x_session` cookie bounded by the X access-token lifetime; and
+8. creates an encrypted `__Host-florin_x_session` cookie bounded by the X access-token lifetime; and
 9. returns the verified handle.
 
 Successful response:
@@ -148,7 +148,8 @@ The current resolver still returns `token transfer is not implemented` after X a
 ## Deployment notes
 
 - The Next.js proxy must forward `Cookie` and relay every `Set-Cookie` response. It does this in `lib/backend.ts`.
-- The proxy also forwards `X-Forwarded-Proto` and `X-Forwarded-Host`, allowing the Go service to issue/clear secure cookies correctly behind the Unix-socket proxy.
-- X API access tiers and rate limits apply. The following-list endpoint is paginated with `max_results=1000`; claims fail closed rather than bypassing verification if X returns an error.
+- OAuth and session cookies use the `__Host-` prefix with `Secure`, `HttpOnly`, `SameSite=Lax`, `Path=/`, and no `Domain`. Modern browsers treat `localhost` as a trustworthy origin for Secure-cookie development; use local HTTPS if the browser under test does not.
+- The proxy forwards `X-Forwarded-Proto` and `X-Forwarded-Host` for normal reverse-proxy observability.
+- X API access tiers and rate limits apply. The following-list endpoint uses `max_results=1000`, a 25-page cap, and a 20-second aggregate deadline; claims fail closed rather than bypassing verification if X returns an error.
 - Use the immutable X user ID for database abuse controls. Handles can change.
 - Do not log callback codes, access tokens, session cookies, or `SPN_X_SESSION_SECRET`.

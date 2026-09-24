@@ -168,6 +168,14 @@ func TestCallbackVerifiesFollowAcrossAllPagesAndCreatesSession(t *testing.T) {
 		t.Fatalf("identity = %#v", identity)
 	}
 
+	restarted, err := New(config)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := restarted.Identity(sessionReq); !errors.Is(err, ErrUnauthenticated) {
+		t.Fatalf("session survived process-key rotation: %v", err)
+	}
+
 	logoutReq := httptest.NewRequest(http.MethodDelete, "/auth/x/session", nil)
 	logoutReq.AddCookie(sessionCookie)
 	logoutRecorder := httptest.NewRecorder()
@@ -263,13 +271,21 @@ func TestCallbackRejectsStateMismatchBeforeTokenExchange(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	cookie, _ := startLogin(t, auth)
+	cookie, state := startLogin(t, auth)
 	req := httptest.NewRequest(http.MethodPost, "/auth/x/callback", strings.NewReader(`{"code":"code","state":"wrong","redirectUri":"`+testRedirect+`"}`))
 	req.AddCookie(cookie)
 	recorder := httptest.NewRecorder()
 	auth.CallbackHandler(recorder, req)
 	if recorder.Code != http.StatusBadRequest || calls.Load() != 0 {
 		t.Fatalf("status = %d, calls = %d", recorder.Code, calls.Load())
+	}
+
+	retry := httptest.NewRequest(http.MethodPost, "/auth/x/callback", strings.NewReader(`{"code":"code","state":"`+state+`","redirectUri":"`+testRedirect+`"}`))
+	retry.AddCookie(cookie)
+	retryRecorder := httptest.NewRecorder()
+	auth.CallbackHandler(retryRecorder, retry)
+	if retryRecorder.Code != http.StatusBadGateway || calls.Load() != 1 {
+		t.Fatalf("valid retry status = %d, calls = %d", retryRecorder.Code, calls.Load())
 	}
 }
 
