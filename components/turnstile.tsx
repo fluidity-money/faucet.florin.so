@@ -54,6 +54,6 @@ export function Turnstile({ onToken, resetKey }: Props) {
     if (widgetRef.current && window.turnstile) window.turnstile.reset(widgetRef.current);
   }, [resetKey]);
 
-  if (!siteKey) return <p className="config-note">Turnstile site key is not configured.</p>;
+  if (!siteKey) return <p className="config-note">Human verification is temporarily unavailable.</p>;
   return <div id={`turnstile-${id}`} ref={elementRef} className="turnstile" />;
 }

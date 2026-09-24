@@ -137,7 +137,7 @@ export function Faucet() {
         <div className="step-number">03</div>
         <div className="step-body">
           <label>Confirm you’re human</label>
-          <p>Cloudflare checks this request without exposing the faucet secret.</p>
+          <p>A quick Cloudflare check helps keep the faucet open to everyone.</p>
           <Turnstile onToken={onToken} resetKey={resetKey} />
         </div>
       </div>
