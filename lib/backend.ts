@@ -12,6 +12,8 @@ export function forwardedHeaders(request: NextRequest, includeJson = false): Hea
   if (cookie) headers.set("cookie", cookie);
   const forwardedFor = request.headers.get("x-forwarded-for");
   if (forwardedFor) headers.set("x-forwarded-for", forwardedFor);
+  headers.set("x-forwarded-proto", request.nextUrl.protocol.replace(":", ""));
+  headers.set("x-forwarded-host", request.nextUrl.host);
   const userAgent = request.headers.get("user-agent");
   if (userAgent) headers.set("user-agent", userAgent);
   if (includeJson) headers.set("content-type", "application/json");

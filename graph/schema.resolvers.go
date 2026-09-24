@@ -7,11 +7,44 @@ package graph
 
 import (
 	"context"
+	"errors"
+	"fmt"
+	"strings"
+
+	"github.com/fluidity-money/faucet.florin.so/internal/xauth"
 )
 
 // RequestToken is the resolver for the requestToken field.
 func (r *mutationResolver) RequestToken(ctx context.Context, xHandle string, recipientAddress string, turnstileToken string) (bool, error) {
-	panic("todo")
+	if err := r.authorizeXClaim(ctx, xHandle); err != nil {
+		return false, err
+	}
+
+	// X authorization is complete. Token transfer, Turnstile verification, and
+	// the once-per-day database transaction are implemented separately.
+	return false, errors.New("token transfer is not implemented")
+}
+
+func (r *Resolver) authorizeXClaim(ctx context.Context, claimedHandle string) error {
+	identity, ok := xauth.IdentityFromContext(ctx)
+	if !ok {
+		return errors.New("Connect and verify your X account first.")
+	}
+	normalized := strings.TrimPrefix(strings.TrimSpace(claimedHandle), "@")
+	if !strings.EqualFold(normalized, identity.Handle) {
+		return errors.New("The submitted X handle does not match the verified X account.")
+	}
+	if r.XAuth == nil {
+		return errors.New("X verification is not configured.")
+	}
+	follows, err := r.XAuth.VerifyFollowing(ctx, identity)
+	if err != nil {
+		return fmt.Errorf("X could not verify your follow status; please try again: %w", err)
+	}
+	if !follows {
+		return errors.New("Follow @florinprotocol on X, reconnect your account, then try again.")
+	}
+	return nil
 }
 
 // Mutation returns MutationResolver implementation.

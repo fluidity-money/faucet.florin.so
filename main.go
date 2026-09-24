@@ -3,13 +3,16 @@
 package main
 
 import (
-	"net"
 	"database/sql"
 	"log"
+	"net"
 	"net/http"
 	"os"
+	"strings"
+	"time"
 
 	"github.com/fluidity-money/faucet.florin.so/graph"
+	"github.com/fluidity-money/faucet.florin.so/internal/xauth"
 
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/handler/extension"
@@ -20,12 +23,19 @@ import (
 	"github.com/vektah/gqlparser/v2/ast"
 
 	"github.com/ethereum/go-ethereum/ethclient"
+	_ "github.com/lib/pq"
 )
 
 const (
-	EnvTurnstileSecret = "SPN_TURNSTILE_SECRET"
-	EnvGethAddr        = "SPN_ROBINHOOD_URL"
-	EnvTimescaleUri = "SPN_TIMESCALE"
+	EnvTurnstileSecret  = "SPN_TURNSTILE_SECRET"
+	EnvGethAddr         = "SPN_ROBINHOOD_URL"
+	EnvTimescaleURI     = "SPN_TIMESCALE"
+	EnvXClientID        = "SPN_X_CLIENT_ID"
+	EnvXClientSecret    = "SPN_X_CLIENT_SECRET"
+	EnvXSessionSecret   = "SPN_X_SESSION_SECRET"
+	EnvXRedirectURIs    = "SPN_X_REDIRECT_URIS"
+	EnvXRequiredUserID  = "SPN_X_REQUIRED_USER_ID"
+	EnvXRequiredAccount = "SPN_X_REQUIRED_USERNAME"
 )
 
 const HttpUnixSocket = "/var/run/faucet.florin.so/http.sock"
@@ -33,14 +43,33 @@ const HttpUnixSocket = "/var/run/faucet.florin.so/http.sock"
 func main() {
 	turnstileSecret := os.Getenv(EnvTurnstileSecret)
 	if turnstileSecret == "" {
-		log.Fatalf("turnstile unset")
+		log.Fatal("turnstile unset")
 	}
+
+	requiredAccount := strings.TrimSpace(os.Getenv(EnvXRequiredAccount))
+	if requiredAccount == "" {
+		requiredAccount = "florinprotocol"
+	}
+	xAuthenticator, err := xauth.New(xauth.Config{
+		ClientID:         os.Getenv(EnvXClientID),
+		ClientSecret:     os.Getenv(EnvXClientSecret),
+		SessionSecret:    os.Getenv(EnvXSessionSecret),
+		AllowedRedirects: splitCommaSeparated(os.Getenv(EnvXRedirectURIs)),
+		RequiredUsername: requiredAccount,
+		RequiredUserID:   os.Getenv(EnvXRequiredUserID),
+		SessionTTL:       2 * time.Hour,
+		TransactionTTL:   10 * time.Minute,
+	})
+	if err != nil {
+		log.Fatalf("configure X authentication: %v", err)
+	}
+
 	client, err := ethclient.Dial(os.Getenv(EnvGethAddr))
 	if err != nil {
 		log.Fatalf("ethclient dial: %v", err)
 	}
 	defer client.Close()
-	db, err := sql.Open("postgres", os.Getenv(EnvTimescaleUri))
+	db, err := sql.Open("postgres", os.Getenv(EnvTimescaleURI))
 	if err != nil {
 		log.Fatalf("connect postgres: %v", err)
 	}
@@ -50,6 +79,7 @@ func main() {
 			TurnstileSecret: turnstileSecret,
 			Db:              db,
 			Client:          client,
+			XAuth:           xAuthenticator,
 		},
 	}))
 	srv.AddTransport(transport.Options{})
@@ -60,13 +90,31 @@ func main() {
 	srv.Use(extension.AutomaticPersistedQuery{
 		Cache: lru.New[string](100),
 	})
-	http.Handle("/playground", playground.Handler("GraphQL playground", "/query"))
-	http.Handle("/", srv)
+
+	mux := http.NewServeMux()
+	mux.Handle("/playground", playground.Handler("GraphQL playground", "/query"))
+	mux.HandleFunc("/auth/x/start", xAuthenticator.StartHandler)
+	mux.HandleFunc("/auth/x/callback", xAuthenticator.CallbackHandler)
+	mux.HandleFunc("/auth/x/session", xAuthenticator.SessionHandler)
+	mux.Handle("/query", xAuthenticator.Middleware(srv))
+	mux.Handle("/", xAuthenticator.Middleware(srv))
+
 	_ = os.Remove(HttpUnixSocket)
-	l, err := net.Listen("unix", HttpUnixSocket)
+	listener, err := net.Listen("unix", HttpUnixSocket)
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer l.Close()
-	panic(http.Serve(l, nil))
+	defer listener.Close()
+	log.Printf("faucet listening on unix://%s", HttpUnixSocket)
+	log.Fatal(http.Serve(listener, mux))
+}
+
+func splitCommaSeparated(value string) []string {
+	var values []string
+	for _, item := range strings.Split(value, ",") {
+		if trimmed := strings.TrimSpace(item); trimmed != "" {
+			values = append(values, trimmed)
+		}
+	}
+	return values
 }

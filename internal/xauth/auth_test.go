@@ -19,18 +19,18 @@ const (
 
 func testConfig(apiURL string) Config {
 	return Config{
-		ClientID:          "client-id",
-		ClientSecret:      "client-secret",
-		SessionSecret:     testSecret,
-		AllowedRedirects:  []string{testRedirect},
-		RequiredUsername:  "florinprotocol",
-		RequiredUserID:    "999",
-		AuthorizeURL:      apiURL + "/authorize",
-		TokenURL:          apiURL + "/token",
-		APIBaseURL:        apiURL,
-		SessionTTL:        24 * time.Hour,
-		TransactionTTL:    10 * time.Minute,
-		Now:               func() time.Time { return time.Unix(1_800_000_000, 0) },
+		ClientID:         "client-id",
+		ClientSecret:     "client-secret",
+		SessionSecret:    testSecret,
+		AllowedRedirects: []string{testRedirect},
+		RequiredUsername: "florinprotocol",
+		RequiredUserID:   "999",
+		AuthorizeURL:     apiURL + "/authorize",
+		TokenURL:         apiURL + "/token",
+		APIBaseURL:       apiURL,
+		SessionTTL:       24 * time.Hour,
+		TransactionTTL:   10 * time.Minute,
+		Now:              func() time.Time { return time.Unix(1_800_000_000, 0) },
 	}
 }
 
@@ -42,7 +42,9 @@ func startLogin(t *testing.T, auth *Auth) (*http.Cookie, string) {
 	if recorder.Code != http.StatusOK {
 		t.Fatalf("start status = %d, body = %s", recorder.Code, recorder.Body.String())
 	}
-	var result struct{ AuthorizationURL string `json:"authorizationUrl"` }
+	var result struct {
+		AuthorizationURL string `json:"authorizationUrl"`
+	}
 	if err := json.Unmarshal(recorder.Body.Bytes(), &result); err != nil {
 		t.Fatal(err)
 	}
@@ -104,18 +106,18 @@ func TestCallbackVerifiesFollowAcrossAllPagesAndCreatesSession(t *testing.T) {
 			if r.Form.Get("code_verifier") == "" || r.Form.Get("redirect_uri") != testRedirect {
 				t.Errorf("bad token form: %v", r.Form)
 			}
-			writeJSON(w, http.StatusOK, map[string]any{"access_token": "user-token", "token_type": "bearer", "expires_in": 7200})
+			writeTestJSON(w, http.StatusOK, map[string]any{"access_token": "user-token", "token_type": "bearer", "expires_in": 7200})
 		case r.URL.Path == "/users/me":
 			assertBearer(t, r, "user-token")
-			writeJSON(w, http.StatusOK, map[string]any{"data": map[string]string{"id": "123", "username": "alice"}})
+			writeTestJSON(w, http.StatusOK, map[string]any{"data": map[string]string{"id": "123", "username": "alice"}})
 		case r.URL.Path == "/users/123/following":
 			assertBearer(t, r, "user-token")
 			followingCalls.Add(1)
 			if r.URL.Query().Get("pagination_token") == "next-page" {
-				writeJSON(w, http.StatusOK, map[string]any{"data": []map[string]string{{"id": "999", "username": "florinprotocol"}}, "meta": map[string]any{"result_count": 1}})
+				writeTestJSON(w, http.StatusOK, map[string]any{"data": []map[string]string{{"id": "999", "username": "florinprotocol"}}, "meta": map[string]any{"result_count": 1}})
 				return
 			}
-			writeJSON(w, http.StatusOK, map[string]any{"data": []map[string]string{{"id": "456", "username": "someone"}}, "meta": map[string]any{"result_count": 1, "next_token": "next-page"}})
+			writeTestJSON(w, http.StatusOK, map[string]any{"data": []map[string]string{{"id": "456", "username": "someone"}}, "meta": map[string]any{"result_count": 1, "next_token": "next-page"}})
 		default:
 			http.NotFound(w, r)
 		}
@@ -170,11 +172,11 @@ func TestCallbackRejectsUserWhoDoesNotFollowFlorin(t *testing.T) {
 	api := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case "/token":
-			writeJSON(w, http.StatusOK, map[string]any{"access_token": "user-token", "token_type": "bearer", "expires_in": 7200})
+			writeTestJSON(w, http.StatusOK, map[string]any{"access_token": "user-token", "token_type": "bearer", "expires_in": 7200})
 		case "/users/me":
-			writeJSON(w, http.StatusOK, map[string]any{"data": map[string]string{"id": "123", "username": "alice"}})
+			writeTestJSON(w, http.StatusOK, map[string]any{"data": map[string]string{"id": "123", "username": "alice"}})
 		case "/users/123/following":
-			writeJSON(w, http.StatusOK, map[string]any{"meta": map[string]any{"result_count": 0}})
+			writeTestJSON(w, http.StatusOK, map[string]any{"meta": map[string]any{"result_count": 0}})
 		default:
 			http.NotFound(w, r)
 		}
@@ -222,7 +224,7 @@ func TestCallbackRejectsStateMismatchBeforeTokenExchange(t *testing.T) {
 
 func TestVerifyFollowingFailsClosedOnRateLimit(t *testing.T) {
 	api := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		writeJSON(w, http.StatusTooManyRequests, map[string]string{"title": "Too Many Requests"})
+		writeTestJSON(w, http.StatusTooManyRequests, map[string]string{"title": "Too Many Requests"})
 	}))
 	defer api.Close()
 	auth, err := New(testConfig(api.URL))
@@ -235,6 +237,32 @@ func TestVerifyFollowingFailsClosedOnRateLimit(t *testing.T) {
 	}
 }
 
+func TestMiddlewareAddsAValidIdentityToTheRequestContext(t *testing.T) {
+	auth, err := New(testConfig("https://api.x.test"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	value, err := auth.seal(session{
+		UserID: "123", Handle: "alice", AccessToken: "token", RequiredUserID: "999",
+		ExpiresAt: auth.config.Now().Add(time.Hour).Unix(),
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	var got Identity
+	next := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		got, _ = IdentityFromContext(r.Context())
+		w.WriteHeader(http.StatusNoContent)
+	})
+	req := httptest.NewRequest(http.MethodPost, "/query", nil)
+	req.AddCookie(&http.Cookie{Name: sessionCookieName, Value: value})
+	recorder := httptest.NewRecorder()
+	auth.Middleware(next).ServeHTTP(recorder, req)
+	if recorder.Code != http.StatusNoContent || got.UserID != "123" || got.Handle != "alice" {
+		t.Fatalf("status = %d, identity = %#v", recorder.Code, got)
+	}
+}
+
 func assertBearer(t *testing.T, r *http.Request, token string) {
 	t.Helper()
 	if got := r.Header.Get("Authorization"); got != "Bearer "+token {
@@ -242,7 +270,7 @@ func assertBearer(t *testing.T, r *http.Request, token string) {
 	}
 }
 
-func writeJSON(w http.ResponseWriter, status int, value any) {
+func writeTestJSON(w http.ResponseWriter, status int, value any) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
 	_ = json.NewEncoder(w).Encode(value)

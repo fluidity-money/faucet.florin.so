@@ -6,6 +6,8 @@ tool github.com/99designs/gqlgen
 
 require (
 	github.com/99designs/gqlgen v0.17.95
+	github.com/ethereum/go-ethereum v1.17.6
+	github.com/lib/pq v1.12.3
 	github.com/vektah/gqlparser/v2 v2.5.37
 )
 
@@ -22,7 +24,6 @@ require (
 	github.com/deckarep/golang-set/v2 v2.6.0 // indirect
 	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.0.1 // indirect
 	github.com/ethereum/c-kzg-4844/v2 v2.1.8 // indirect
-	github.com/ethereum/go-ethereum v1.17.6 // indirect
 	github.com/fjl/jsonw v0.1.0 // indirect
 	github.com/go-logr/logr v1.4.4 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
