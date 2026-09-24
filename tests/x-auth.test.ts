@@ -20,4 +20,7 @@ test("allows only local return paths", () => {
   assert.equal(safeReturnTo("/claim?from=x"), "/claim?from=x");
   assert.equal(safeReturnTo("https://evil.example"), "/");
   assert.equal(safeReturnTo("//evil.example"), "/");
+  assert.equal(safeReturnTo("/\\\\evil.example/path"), "/");
+  assert.equal(safeReturnTo("/%5c%5cevil.example/path"), "/");
+  assert.equal(safeReturnTo("/claim\nSet-Cookie: bad=1"), "/");
 });

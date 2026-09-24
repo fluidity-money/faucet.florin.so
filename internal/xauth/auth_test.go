@@ -3,6 +3,7 @@ package xauth
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -166,6 +167,56 @@ func TestCallbackVerifiesFollowAcrossAllPagesAndCreatesSession(t *testing.T) {
 	if identity.UserID != "123" || identity.Handle != "alice" || identity.AccessToken != "user-token" {
 		t.Fatalf("identity = %#v", identity)
 	}
+
+	logoutReq := httptest.NewRequest(http.MethodDelete, "/auth/x/session", nil)
+	logoutReq.AddCookie(sessionCookie)
+	logoutRecorder := httptest.NewRecorder()
+	auth.SessionHandler(logoutRecorder, logoutReq)
+	if logoutRecorder.Code != http.StatusOK {
+		t.Fatalf("logout status = %d", logoutRecorder.Code)
+	}
+	if _, err := auth.Identity(sessionReq); !errors.Is(err, ErrUnauthenticated) {
+		t.Fatalf("copied session remained valid after logout: %v", err)
+	}
+}
+
+func TestCallbackTransactionCanOnlyBeConsumedOnce(t *testing.T) {
+	var tokenCalls atomic.Int32
+	api := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/token":
+			tokenCalls.Add(1)
+			writeTestJSON(w, http.StatusOK, map[string]any{"access_token": "user-token", "token_type": "bearer", "expires_in": 7200})
+		case "/users/me":
+			writeTestJSON(w, http.StatusOK, map[string]any{"data": map[string]string{"id": "123", "username": "alice"}})
+		case "/users/123/following":
+			writeTestJSON(w, http.StatusOK, map[string]any{"data": []map[string]string{{"id": "999"}}})
+		default:
+			http.NotFound(w, r)
+		}
+	}))
+	defer api.Close()
+	auth, err := New(testConfig(api.URL))
+	if err != nil {
+		t.Fatal(err)
+	}
+	cookie, state := startLogin(t, auth)
+	body := `{"code":"code","state":"` + state + `","redirectUri":"` + testRedirect + `"}`
+	for attempt := 0; attempt < 2; attempt++ {
+		req := httptest.NewRequest(http.MethodPost, "/auth/x/callback", strings.NewReader(body))
+		req.AddCookie(cookie)
+		recorder := httptest.NewRecorder()
+		auth.CallbackHandler(recorder, req)
+		if attempt == 0 && recorder.Code != http.StatusOK {
+			t.Fatalf("first callback = %d %s", recorder.Code, recorder.Body.String())
+		}
+		if attempt == 1 && recorder.Code != http.StatusBadRequest {
+			t.Fatalf("replayed callback = %d %s", recorder.Code, recorder.Body.String())
+		}
+	}
+	if tokenCalls.Load() != 1 {
+		t.Fatalf("token exchanges = %d", tokenCalls.Load())
+	}
 }
 
 func TestCallbackRejectsUserWhoDoesNotFollowFlorin(t *testing.T) {
@@ -242,8 +293,8 @@ func TestMiddlewareAddsAValidIdentityToTheRequestContext(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	value, err := auth.seal(session{
-		UserID: "123", Handle: "alice", AccessToken: "token", RequiredUserID: "999",
+	value, err := auth.seal(sessionPurpose, session{
+		SessionID: "session-1", UserID: "123", Handle: "alice", AccessToken: "token", RequiredUserID: "999",
 		ExpiresAt: auth.config.Now().Add(time.Hour).Unix(),
 	})
 	if err != nil {
@@ -260,6 +311,17 @@ func TestMiddlewareAddsAValidIdentityToTheRequestContext(t *testing.T) {
 	auth.Middleware(next).ServeHTTP(recorder, req)
 	if recorder.Code != http.StatusNoContent || got.UserID != "123" || got.Handle != "alice" {
 		t.Fatalf("status = %d, identity = %#v", recorder.Code, got)
+	}
+}
+
+func TestSafeReturnToRejectsNetworkPathsAndControls(t *testing.T) {
+	for _, value := range []string{"https://evil.example", "//evil.example", `/\\evil.example/path`, "/%5c%5cevil.example/path", "/claim\nheader"} {
+		if got := safeReturnTo(value); got != "/" {
+			t.Errorf("safeReturnTo(%q) = %q", value, got)
+		}
+	}
+	if got := safeReturnTo("/claim?from=x#done"); got != "/claim?from=x#done" {
+		t.Fatalf("valid return path = %q", got)
 	}
 }
 

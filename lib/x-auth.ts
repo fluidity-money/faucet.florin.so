@@ -16,5 +16,13 @@ export function callbackPayload(
 
 export function safeReturnTo(value: string | null | undefined): string {
   if (!value || !value.startsWith("/") || value.startsWith("//")) return "/";
+  try {
+    const decoded = decodeURIComponent(value);
+    if (decoded.startsWith("//") || /[\\\\\u0000-\u001f\u007f]/.test(decoded)) return "/";
+    const base = new URL("https://faucet.invalid");
+    if (new URL(value, base).origin !== base.origin) return "/";
+  } catch {
+    return "/";
+  }
   return value;
 }

@@ -16,14 +16,18 @@ import (
 	"net/url"
 	"path"
 	"strings"
+	"sync"
 	"time"
 )
 
 const (
-	transactionCookieName = "florin_x_oauth"
-	sessionCookieName     = "florin_x_session"
+	transactionCookieName = "__Host-florin_x_oauth"
+	sessionCookieName     = "__Host-florin_x_session"
+	transactionPurpose    = "florin-x-oauth-transaction-v1"
+	sessionPurpose        = "florin-x-session-v1"
 	maxResponseBytes      = 1 << 20
-	maxFollowingPages     = 1000
+	maxFollowingPages     = 25
+	followingCheckTimeout = 20 * time.Second
 )
 
 var ErrUnauthenticated = errors.New("X session is missing or invalid")
@@ -49,9 +53,13 @@ type Auth struct {
 	config           Config
 	cookies          cipher.AEAD
 	allowedRedirects map[string]struct{}
+	stateMu          sync.Mutex
+	usedTransactions map[string]int64
+	revokedSessions  map[string]int64
 }
 
 type Identity struct {
+	SessionID      string
 	UserID         string
 	Handle         string
 	AccessToken    string
@@ -93,6 +101,7 @@ type transaction struct {
 }
 
 type session struct {
+	SessionID      string `json:"session_id"`
 	UserID         string `json:"user_id"`
 	Handle         string `json:"handle"`
 	AccessToken    string `json:"access_token"`
@@ -189,7 +198,13 @@ func New(config Config) (*Auth, error) {
 	if err != nil {
 		return nil, fmt.Errorf("create cookie AEAD: %w", err)
 	}
-	return &Auth{config: config, cookies: cookies, allowedRedirects: allowed}, nil
+	return &Auth{
+		config:           config,
+		cookies:          cookies,
+		allowedRedirects: allowed,
+		usedTransactions: make(map[string]int64),
+		revokedSessions:  make(map[string]int64),
+	}, nil
 }
 
 func (a *Auth) StartHandler(w http.ResponseWriter, r *http.Request) {
@@ -222,18 +237,17 @@ func (a *Auth) StartHandler(w http.ResponseWriter, r *http.Request) {
 		ReturnTo:    safeReturnTo(r.URL.Query().Get("returnTo")),
 		ExpiresAt:   a.config.Now().Add(a.config.TransactionTTL).Unix(),
 	}
-	cookieValue, err := a.seal(tx)
+	cookieValue, err := a.seal(transactionPurpose, tx)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "Could not start X verification.")
 		return
 	}
-	secure := strings.HasPrefix(strings.ToLower(redirectURI), "https://")
 	http.SetCookie(w, &http.Cookie{
 		Name:     transactionCookieName,
 		Value:    cookieValue,
 		Path:     "/",
 		HttpOnly: true,
-		Secure:   secure,
+		Secure:   true,
 		SameSite: http.SameSiteLaxMode,
 		MaxAge:   int(a.config.TransactionTTL.Seconds()),
 	})
@@ -267,13 +281,17 @@ func (a *Auth) CallbackHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var tx transaction
-	if err := a.open(cookie.Value, &tx); err != nil || tx.ExpiresAt <= a.config.Now().Unix() {
-		a.clearCookie(w, transactionCookieName, cookie.Secure)
+	if err := a.open(transactionPurpose, cookie.Value, &tx); err != nil || tx.ExpiresAt <= a.config.Now().Unix() {
+		a.clearCookie(w, transactionCookieName)
 		writeError(w, http.StatusBadRequest, "X verification has expired. Please start again.")
 		return
 	}
-	secure := strings.HasPrefix(strings.ToLower(tx.RedirectURI), "https://")
-	a.clearCookie(w, transactionCookieName, secure)
+	if !a.consumeTransaction(tx.State, tx.ExpiresAt) {
+		a.clearCookie(w, transactionCookieName)
+		writeError(w, http.StatusBadRequest, "X verification was already used. Please start again.")
+		return
+	}
+	a.clearCookie(w, transactionCookieName)
 
 	var callback callbackRequest
 	if err := decodeJSON(r.Body, &callback); err != nil {
@@ -327,14 +345,20 @@ func (a *Auth) CallbackHandler(w http.ResponseWriter, r *http.Request) {
 			expiresAt = tokenExpiry
 		}
 	}
+	sessionID, err := a.randomToken(32)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "Could not create an X session.")
+		return
+	}
 	payload := session{
+		SessionID:      sessionID,
 		UserID:         user.ID,
 		Handle:         user.Username,
 		AccessToken:    token.AccessToken,
 		RequiredUserID: requiredID,
 		ExpiresAt:      expiresAt.Unix(),
 	}
-	value, err := a.seal(payload)
+	value, err := a.seal(sessionPurpose, payload)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "Could not create an X session.")
 		return
@@ -352,7 +376,7 @@ func (a *Auth) CallbackHandler(w http.ResponseWriter, r *http.Request) {
 		Value:    value,
 		Path:     "/",
 		HttpOnly: true,
-		Secure:   secure,
+		Secure:   true,
 		SameSite: http.SameSiteLaxMode,
 		MaxAge:   maxAge,
 	})
@@ -366,7 +390,10 @@ func (a *Auth) CallbackHandler(w http.ResponseWriter, r *http.Request) {
 func (a *Auth) SessionHandler(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodDelete:
-		a.clearCookie(w, sessionCookieName, requestIsSecure(r))
+		if identity, err := a.Identity(r); err == nil {
+			a.revokeSession(identity.SessionID, identity.ExpiresAt.Unix())
+		}
+		a.clearCookie(w, sessionCookieName)
 		writeJSON(w, http.StatusOK, map[string]bool{"authenticated": false})
 	case http.MethodGet:
 		identity, err := a.Identity(r)
@@ -387,11 +414,13 @@ func (a *Auth) Identity(r *http.Request) (Identity, error) {
 		return Identity{}, ErrUnauthenticated
 	}
 	var stored session
-	if err := a.open(cookie.Value, &stored); err != nil || stored.ExpiresAt <= a.config.Now().Unix() ||
-		stored.UserID == "" || stored.Handle == "" || stored.AccessToken == "" || stored.RequiredUserID == "" {
+	if err := a.open(sessionPurpose, cookie.Value, &stored); err != nil || stored.ExpiresAt <= a.config.Now().Unix() ||
+		stored.SessionID == "" || stored.UserID == "" || stored.Handle == "" || stored.AccessToken == "" || stored.RequiredUserID == "" ||
+		a.sessionIsRevoked(stored.SessionID) {
 		return Identity{}, ErrUnauthenticated
 	}
 	return Identity{
+		SessionID:      stored.SessionID,
 		UserID:         stored.UserID,
 		Handle:         stored.Handle,
 		AccessToken:    stored.AccessToken,
@@ -459,6 +488,9 @@ func (a *Auth) userByUsername(ctx context.Context, accessToken, username string)
 }
 
 func (a *Auth) follows(ctx context.Context, accessToken, sourceUserID, targetUserID string) (bool, error) {
+	ctx, cancel := context.WithTimeout(ctx, followingCheckTimeout)
+	defer cancel()
+
 	paginationToken := ""
 	seen := make(map[string]struct{})
 	for pageNumber := 0; pageNumber < maxFollowingPages; pageNumber++ {
@@ -533,7 +565,7 @@ func (a *Auth) randomToken(size int) (string, error) {
 	return base64.RawURLEncoding.EncodeToString(data), nil
 }
 
-func (a *Auth) seal(value any) (string, error) {
+func (a *Auth) seal(purpose string, value any) (string, error) {
 	plaintext, err := json.Marshal(value)
 	if err != nil {
 		return "", err
@@ -542,17 +574,17 @@ func (a *Auth) seal(value any) (string, error) {
 	if _, err := io.ReadFull(a.config.Random, nonce); err != nil {
 		return "", err
 	}
-	sealed := a.cookies.Seal(nonce, nonce, plaintext, nil)
+	sealed := a.cookies.Seal(nonce, nonce, plaintext, []byte(purpose))
 	return base64.RawURLEncoding.EncodeToString(sealed), nil
 }
 
-func (a *Auth) open(value string, destination any) error {
+func (a *Auth) open(purpose, value string, destination any) error {
 	sealed, err := base64.RawURLEncoding.DecodeString(value)
 	if err != nil || len(sealed) < a.cookies.NonceSize() {
 		return ErrUnauthenticated
 	}
 	nonce := sealed[:a.cookies.NonceSize()]
-	plaintext, err := a.cookies.Open(nil, nonce, sealed[a.cookies.NonceSize():], nil)
+	plaintext, err := a.cookies.Open(nil, nonce, sealed[a.cookies.NonceSize():], []byte(purpose))
 	if err != nil {
 		return ErrUnauthenticated
 	}
@@ -562,13 +594,53 @@ func (a *Auth) open(value string, destination any) error {
 	return nil
 }
 
-func (a *Auth) clearCookie(w http.ResponseWriter, name string, secure bool) {
+func (a *Auth) consumeTransaction(state string, expiresAt int64) bool {
+	a.stateMu.Lock()
+	defer a.stateMu.Unlock()
+	a.removeExpiredStateLocked()
+	if _, used := a.usedTransactions[state]; used {
+		return false
+	}
+	a.usedTransactions[state] = expiresAt
+	return true
+}
+
+func (a *Auth) revokeSession(sessionID string, expiresAt int64) {
+	a.stateMu.Lock()
+	defer a.stateMu.Unlock()
+	a.removeExpiredStateLocked()
+	a.revokedSessions[sessionID] = expiresAt
+}
+
+func (a *Auth) sessionIsRevoked(sessionID string) bool {
+	a.stateMu.Lock()
+	defer a.stateMu.Unlock()
+	a.removeExpiredStateLocked()
+	_, revoked := a.revokedSessions[sessionID]
+	return revoked
+}
+
+func (a *Auth) removeExpiredStateLocked() {
+	now := a.config.Now().Unix()
+	for state, expiresAt := range a.usedTransactions {
+		if expiresAt <= now {
+			delete(a.usedTransactions, state)
+		}
+	}
+	for sessionID, expiresAt := range a.revokedSessions {
+		if expiresAt <= now {
+			delete(a.revokedSessions, sessionID)
+		}
+	}
+}
+
+func (a *Auth) clearCookie(w http.ResponseWriter, name string) {
 	http.SetCookie(w, &http.Cookie{
 		Name:     name,
 		Value:    "",
 		Path:     "/",
 		HttpOnly: true,
-		Secure:   secure,
+		Secure:   true,
 		SameSite: http.SameSiteLaxMode,
 		MaxAge:   -1,
 	})
@@ -578,11 +650,20 @@ func safeReturnTo(value string) string {
 	if value == "" || !strings.HasPrefix(value, "/") || strings.HasPrefix(value, "//") {
 		return "/"
 	}
+	decoded, err := url.PathUnescape(value)
+	if err != nil || strings.HasPrefix(decoded, "//") || strings.ContainsRune(decoded, '\\') {
+		return "/"
+	}
+	for _, character := range decoded {
+		if character < 0x20 || character == 0x7f {
+			return "/"
+		}
+	}
+	parsed, err := url.Parse(value)
+	if err != nil || parsed.IsAbs() || parsed.Host != "" {
+		return "/"
+	}
 	return value
-}
-
-func requestIsSecure(r *http.Request) bool {
-	return r.TLS != nil || strings.EqualFold(r.Header.Get("X-Forwarded-Proto"), "https")
 }
 
 func decodeJSON(reader io.Reader, destination any) error {

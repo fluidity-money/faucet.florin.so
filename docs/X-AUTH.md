@@ -2,7 +2,9 @@
 
 The Go service now implements the X OAuth 2.0 Authorization Code flow with PKCE and requires each claimant to follow `@florinprotocol`.
 
-The browser never receives the X client secret or bearer token. OAuth transaction data and the short-lived X access token are encrypted with AES-GCM inside HttpOnly cookies. The callback checks the follow relationship before establishing a session, and the GraphQL claim path checks the relationship again immediately before a claim.
+The browser never receives the X client secret or bearer token. OAuth transaction data and the short-lived X access token are encrypted with AES-GCM inside purpose-bound HttpOnly cookies. OAuth state is also consumed in a concurrency-safe in-memory replay cache before code exchange, and logout revokes the session ID until its expiry. The callback checks the follow relationship before establishing a session, and the GraphQL claim path checks the relationship again immediately before a claim.
+
+The replay/revocation cache is process-local because the service currently runs as one Unix-socket process. If the service is later replicated, move those two expiry maps to shared storage such as Postgres or Redis before running more than one instance.
 
 ## X developer-console setup
 

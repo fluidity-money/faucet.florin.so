@@ -38,7 +38,7 @@ const (
 	EnvXRequiredAccount = "SPN_X_REQUIRED_USERNAME"
 )
 
-const HttpUnixSocket = "/var/run/faucet.florin.so/http.sock"
+const HttpUnixSocket = "/run/faucet.florin.so/http.sock"
 
 func main() {
 	turnstileSecret := os.Getenv(EnvTurnstileSecret)
