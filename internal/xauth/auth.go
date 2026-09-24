@@ -586,10 +586,21 @@ func requestIsSecure(r *http.Request) bool {
 }
 
 func decodeJSON(reader io.Reader, destination any) error {
-	decoder := json.NewDecoder(io.LimitReader(reader, 32<<10))
+	data, err := io.ReadAll(io.LimitReader(reader, (32<<10)+1))
+	if err != nil {
+		return err
+	}
+	if len(data) > 32<<10 {
+		return errors.New("JSON request is too large")
+	}
+	decoder := json.NewDecoder(strings.NewReader(string(data)))
 	decoder.DisallowUnknownFields()
 	if err := decoder.Decode(destination); err != nil {
 		return err
+	}
+	var trailing any
+	if err := decoder.Decode(&trailing); !errors.Is(err, io.EOF) {
+		return errors.New("JSON request must contain exactly one value")
 	}
 	return nil
 }

@@ -9,6 +9,7 @@ COPY go.sum go.sum
 RUN go get ./...
 
 COPY main.go main.go
+COPY internal internal
 COPY graph graph
 
 RUN go build -o faucet.florin.so
