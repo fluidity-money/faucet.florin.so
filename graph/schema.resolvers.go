@@ -7,7 +7,6 @@ package graph
 
 import (
 	"context"
-	"fmt"
 )
 
 // RequestToken is the resolver for the requestToken field.

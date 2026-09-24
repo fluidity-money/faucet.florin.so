@@ -3,6 +3,7 @@
 package main
 
 import (
+	"net"
 	"database/sql"
 	"log"
 	"net/http"
@@ -24,6 +25,7 @@ import (
 const (
 	EnvTurnstileSecret = "SPN_TURNSTILE_SECRET"
 	EnvGethAddr        = "SPN_ROBINHOOD_URL"
+	EnvTimescaleUri = "SPN_TIMESCALE"
 )
 
 const HttpUnixSocket = "/var/run/faucet.florin.so/http.sock"
@@ -43,8 +45,8 @@ func main() {
 		log.Fatalf("connect postgres: %v", err)
 	}
 	defer db.Close()
-	srv := handler.New(gen.NewExecutableSchema(gen.Config{
-		Resolvers: &gen.Resolver{
+	srv := handler.New(graph.NewExecutableSchema(graph.Config{
+		Resolvers: &graph.Resolver{
 			TurnstileSecret: turnstileSecret,
 			Db:              db,
 			Client:          client,
@@ -59,7 +61,7 @@ func main() {
 		Cache: lru.New[string](100),
 	})
 	http.Handle("/playground", playground.Handler("GraphQL playground", "/query"))
-	http.Handle("/", authMiddleware{db, srv})
+	http.Handle("/", srv)
 	_ = os.Remove(HttpUnixSocket)
 	l, err := net.Listen("unix", HttpUnixSocket)
 	if err != nil {

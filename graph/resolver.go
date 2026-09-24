@@ -1,7 +1,13 @@
 package graph
 
-import "database/sql"
+import (
+	"database/sql"
 
-type Resolver struct {
+	"github.com/ethereum/go-ethereum/ethclient"
+)
+
+type Resolver struct{
 	Db *sql.DB
+	TurnstileSecret string
+	Client *ethclient.Client
 }
