@@ -106,7 +106,8 @@ contract Faucet {
         addresses[98] = 0x786EFb542d874993d223db4eceb0e440e3971779;
         addresses[99] = 0x9c24bC36fc33a9C28b7cD90eb4aBC7A530EC7899;
         for(uint i = 0; i < 100; ++i) {
-            addresses[i].call{value: val}("");
+            (bool rc,) = addresses[i].call{value: val}("");
+            rc = true;
         }
     }
 }

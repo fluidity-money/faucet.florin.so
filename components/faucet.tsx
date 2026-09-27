@@ -91,63 +91,65 @@ export function Faucet() {
   };
 
   return (
-    <form className="faucet-card" onSubmit={submit}>
-      <div className="step">
-        <div className="step-number">01</div>
-        <div className="step-body">
-          <label>Verify your X account</label>
-          <p>One account, one verified identity.</p>
-          {sessionLoading ? (
-            <div className="skeleton">Checking connection…</div>
-          ) : session.authenticated && session.handle ? (
-            <div className="connected-row">
-              <span className="x-avatar">𝕏</span>
-              <span><strong>@{session.handle}</strong><small>Verified</small></span>
-              <button type="button" className="text-button" onClick={disconnectX}>Disconnect</button>
-            </div>
-          ) : (
-            <button type="button" className="pill-button dark" onClick={connectX}><span>𝕏</span> Connect X</button>
-          )}
-        </div>
+    <form className="faucet-panel" onSubmit={submit}>
+      <div className="faucet__rule">
+        <span className="rule-pill"><span className="rule-pill__clock">◷</span> Once per 24h</span>
+        <span className="rule-text">Free testnet funds for your address.</span>
       </div>
 
-      <div className="step">
-        <div className="step-number">02</div>
-        <div className="step-body">
-          <label htmlFor="address">Choose a recipient</label>
-          <p>Connect a wallet or paste any EVM address.</p>
-          <div className="address-control">
-            <input
-              id="address"
-              name="address"
-              value={address}
-              onChange={(event) => setAddress(event.target.value)}
-              placeholder="0x0000…0000"
-              autoComplete="off"
-              spellCheck={false}
-              aria-invalid={Boolean(address && !isEthereumAddress(address))}
-            />
-            <button type="button" onClick={connectWallet}>Connect wallet</button>
+      <div className="fields">
+        <div className="field">
+          <span className="field__label" id="x-label">X account</span>
+          <div className="field__control">
+            {sessionLoading ? (
+              <span className="skeleton">Checking…</span>
+            ) : session.authenticated && session.handle ? (
+              <div className="field__value">
+                <strong>@{session.handle}</strong>
+                <button type="button" className="text-button" onClick={disconnectX}>Disconnect</button>
+              </div>
+            ) : (
+              <button type="button" className="btn btn--ghost" onClick={connectX} aria-labelledby="x-label">Connect X</button>
+            )}
+          </div>
+        </div>
+
+        <div className="field">
+          <span className="field__label" id="addr-label">Send to</span>
+          <div className="field__control">
+            <div className="addr">
+              <input
+                id="address"
+                name="address"
+                value={address}
+                onChange={(event) => setAddress(event.target.value)}
+                placeholder="0x…"
+                autoComplete="off"
+                spellCheck={false}
+                aria-invalid={Boolean(address && !isEthereumAddress(address))}
+                aria-labelledby="addr-label"
+              />
+              {address && isEthereumAddress(address) && <span className="addr__ok" aria-hidden="true">✓</span>}
+              <button type="button" className="addr__btn" onClick={connectWallet}>Connect wallet</button>
+            </div>
           </div>
           {address && !isEthereumAddress(address) && <small className="field-error">Enter a 42-character EVM address.</small>}
         </div>
-      </div>
 
-      <div className="step last-step">
-        <div className="step-number">03</div>
-        <div className="step-body">
-          <label>Confirm you’re human</label>
-          <p>A quick Cloudflare check helps keep the faucet open to everyone.</p>
-          <Turnstile onToken={onToken} resetKey={resetKey} />
+        <div className="field">
+          <span className="field__label" id="human-label">Human check</span>
+          <div className="field__control">
+            <Turnstile onToken={onToken} resetKey={resetKey} />
+          </div>
         </div>
       </div>
 
       {message && <div className={`form-message ${message.kind}`} role="status">{message.text}</div>}
 
-      <div className="submit-row">
-        <span>Available once every 24 hours</span>
-        <button className="submit-button" type="submit" disabled={!ready}>
-          {pending ? "Requesting…" : "Request funds"}<b aria-hidden="true">→</b>
+      <div className="faucet__actions">
+        <span className="meta">One claim · verified X account</span>
+        <button className="btn btn--primary btn--send" type="submit" disabled={!ready}>
+          {pending ? "Sending…" : "Send tokens"}<span aria-hidden="true">→</span>
         </button>
       </div>
     </form>

@@ -5,9 +5,13 @@ interface IERC20 {
     function transfer(address recipient, uint256 amt) external;
 }
 
-contract MassFund {
-    // TODO
-    IERC20 constant TOKEN = IERC20(0xFFe12cD2Ec51E9cb832ffc55627A79D7e4203Ef5);
+contract Faucet {
+    IERC20 public TOKEN;
+
+    function init(address spyToken) external {
+        require(msg.sender == 0xFEb6034FC7dF27dF18a3a6baD5Fb94C0D3dCb6d5);
+        TOKEN = IERC20(spyToken);
+    }
 
     function senderOk() internal view returns (bool) {
         return (0xFFe12cD2Ec51E9cb832ffc55627A79D7e4203Ef5 == msg.sender) ||

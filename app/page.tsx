@@ -4,52 +4,35 @@ export default function HomePage() {
   return (
     <main>
       <header className="site-header">
-        <a className="brand" href="https://florin.so" aria-label="Florin home">
-          <span className="brand-mark" aria-hidden="true" />
-          <span>Florin</span>
-        </a>
-        <div className="header-meta">
-          <span className="network-dot" aria-hidden="true" />
-          Robinhood Chain testnet
+        <div className="site-header__row">
+          <a className="brand" href="https://florin.so" aria-label="Florin home">
+            <span className="brand__mark" aria-hidden="true" />
+            <span>Florin</span>
+          </a>
+          <span className="network-pill">
+            <span className="network-pill__dot" aria-hidden="true" />
+            Robinhood Chain testnet
+          </span>
         </div>
       </header>
 
-      <section className="hero">
-        <div className="hero-copy">
-          <p className="eyebrow">Florin testnet faucet / 01</p>
-          <h1>Fuel the first transaction.</h1>
-          <p className="hero-lead">
-            Verify a real X account, add your EVM address, and receive enough testnet funds to get moving.
-          </p>
-          <div className="hero-rule" aria-hidden="true">
-            <span>01</span><i /><span>03</span>
-          </div>
-        </div>
-        <div className="hero-art" aria-hidden="true">
-          <div className="hero-shape" />
-          <span className="hero-mark" />
-          <span className="orbit orbit-one" />
-          <span className="orbit orbit-two" />
-          <p>VERIFY · FUND · BUILD</p>
+      <section className="main">
+        <div className="faucet">
+          <p className="eyebrow">Florin testnet faucet</p>
+          <h1 className="page-title">Testnet faucet.</h1>
+          <p className="lead">Verified testnet tokens, sent to your wallet.</p>
+
+          <Faucet />
         </div>
       </section>
 
-      <section className="claim-section" id="claim">
-        <div className="claim-intro">
-          <p className="eyebrow">One claim per address, per day</p>
-          <h2>Three checks.<br />Then you’re funded.</h2>
-          <p>
-            X verification and Turnstile keep the faucet useful for builders. Your X password is never shared with Florin.
-          </p>
-        </div>
-        <Faucet />
-      </section>
-
-      <footer>
-        <span>Florin is a Superposition property.</span>
-        <div>
-          <a href="https://florin.so">Florin</a>
-          <a href="https://superposition.so">Superposition</a>
+      <footer className="site-footer">
+        <div className="site-footer__inner">
+          <p className="site-footer__legal">FLORIN © 2026 · SUPERPOSITION</p>
+          <nav className="site-footer__nav" aria-label="Footer">
+            <a href="https://florin.so">Florin</a>
+            <a href="https://superposition.so">Superposition</a>
+          </nav>
         </div>
       </footer>
     </main>
