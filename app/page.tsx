@@ -20,7 +20,7 @@ export default function HomePage() {
         <div className="faucet">
           <p className="eyebrow">Florin testnet faucet</p>
           <h1 className="page-title">Testnet faucet.</h1>
-          <p className="lead">Verified testnet tokens, sent to your wallet.</p>
+          <p className="lead">Receive testnet tokens every 24 hours, and receive a Florin Testnet NFT token.</p>
 
           <Faucet />
         </div>
