@@ -27,6 +27,8 @@ export function Faucet() {
       .finally(() => setSessionLoading(false));
   }, []);
 
+  const xConnected = Boolean(session.authenticated && session.handle);
+
   const connectX = async () => {
     setMessage(null);
     try {
@@ -39,9 +41,16 @@ export function Faucet() {
     }
   };
 
-  const disconnectX = async () => {
-    await fetch("/api/x/session", { method: "DELETE" }).catch(() => undefined);
+  const clearXSession = async () => {
     setSession({ authenticated: false });
+    setAddress("");
+    setTurnstileToken("");
+    setResetKey((value) => value + 1);
+    await fetch("/api/x/session", { method: "DELETE" }).catch(() => undefined);
+  };
+
+  const disconnectX = async () => {
+    await clearXSession();
     setMessage(null);
   };
 
@@ -61,8 +70,8 @@ export function Faucet() {
 
   const onToken = useCallback((token: string) => setTurnstileToken(token), []);
   const ready = useMemo(
-    () => Boolean(session.authenticated && session.handle && isEthereumAddress(address) && turnstileToken && !pending),
-    [address, pending, session, turnstileToken],
+    () => Boolean(xConnected && isEthereumAddress(address) && turnstileToken && !pending),
+    [address, pending, turnstileToken, xConnected],
   );
 
   const submit = async (event: FormEvent) => {
@@ -77,8 +86,9 @@ export function Faucet() {
         body: JSON.stringify({ xHandle: session.handle, recipientAddress: address.trim(), turnstileToken }),
       });
       const result = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(result.error || result.errors?.[0]?.message || "The request failed.");
       const parsed = readFaucetResult(result);
+      if (!parsed.ok && parsed.authenticationRequired) await clearXSession();
+      if (!response.ok) throw new Error(result.error || (!parsed.ok && parsed.message) || "The request failed.");
       if (!parsed.ok) throw new Error(parsed.message);
       setMessage({ kind: "success", text: "Request accepted. Your testnet funds are on the way." });
     } catch (reason) {
@@ -114,7 +124,7 @@ export function Faucet() {
           </div>
         </div>
 
-        <div className="field">
+        <div className={`field${xConnected ? "" : " field--locked"}`} aria-disabled={!xConnected}>
           <span className="field__label" id="addr-label">Send to</span>
           <div className="field__control">
             <div className="addr">
@@ -126,20 +136,25 @@ export function Faucet() {
                 placeholder="0x…"
                 autoComplete="off"
                 spellCheck={false}
+                disabled={!xConnected}
                 aria-invalid={Boolean(address && !isEthereumAddress(address))}
                 aria-labelledby="addr-label"
               />
               {address && isEthereumAddress(address) && <span className="addr__ok" aria-hidden="true">✓</span>}
-              <button type="button" className="addr__btn" onClick={connectWallet}>Connect wallet</button>
+              <button type="button" className="addr__btn" onClick={connectWallet} disabled={!xConnected}>Connect wallet</button>
             </div>
           </div>
           {address && !isEthereumAddress(address) && <small className="field-error">Enter a 42-character EVM address.</small>}
         </div>
 
-        <div className="field">
+        <div className={`field${xConnected ? "" : " field--locked"}`} aria-disabled={!xConnected}>
           <span className="field__label" id="human-label">Human check</span>
           <div className="field__control">
-            <Turnstile onToken={onToken} resetKey={resetKey} />
+            {xConnected ? (
+              <Turnstile onToken={onToken} resetKey={resetKey} />
+            ) : (
+              <span className="field-lock">Connect X to continue.</span>
+            )}
           </div>
         </div>
       </div>

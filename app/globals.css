@@ -196,6 +196,10 @@ a:focus-visible, button:focus-visible, input:focus-visible {
   border-bottom: 1px solid var(--line-soft);
 }
 .field:last-of-type { border-bottom: 0; }
+.field--locked {
+  opacity: 0.42;
+  transition: opacity 150ms ease;
+}
 .field__label {
   font-size: 11px;
   font-weight: 700;
@@ -287,10 +291,12 @@ a:focus-visible, button:focus-visible, input:focus-visible {
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
+.addr__btn:disabled { cursor: not-allowed; }
 .field-error { display: block; margin-top: 7px; color: #9a352e; }
 
 /* Human check */
 .turnstile { max-width: 300px; min-height: 65px; }
+.field-lock { color: var(--gray-3); font-size: 13px; }
 .config-note { margin: 0; color: #9a352e; font-size: 12px; }
 
 /* Message */

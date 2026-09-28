@@ -34,9 +34,19 @@ export function buildFaucetRequest(variables: FaucetVariables) {
 
 export function readFaucetResult(response: FaucetResponse):
   | { ok: true }
-  | { ok: false; message: string } {
+  | { ok: false; message: string; authenticationRequired: boolean } {
   const message = response.errors?.find((error) => error.message)?.message;
-  if (message) return { ok: false, message };
+  if (message) {
+    return {
+      ok: false,
+      message,
+      authenticationRequired: message === "Connect and verify your X account first.",
+    };
+  }
   if (response.data?.requestToken === true) return { ok: true };
-  return { ok: false, message: "The faucet did not accept this request." };
+  return {
+    ok: false,
+    message: "The faucet did not accept this request.",
+    authenticationRequired: false,
+  };
 }

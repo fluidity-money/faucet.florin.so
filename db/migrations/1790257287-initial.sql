@@ -26,8 +26,7 @@ CREATE TABLE florin_faucet_amounts_sent_1 (
 	id SERIAL PRIMARY KEY,
 	created_by TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 	recipient ADDRESS NOT NULL,
-	x_handle VARCHAR NOT NULL,
-	transaction_hash HASH NOT NULL
+	x_handle VARCHAR NOT NULL
 );
 
 CREATE UNIQUE INDEX florin_faucet_amounts_sent_1_recipient_day
