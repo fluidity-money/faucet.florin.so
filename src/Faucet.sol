@@ -1,16 +1,16 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.30;
 
-interface IERC20 {
-    function transfer(address recipient, uint256 amt) external;
+interface Token {
+    function mint(address to, uint256 amount) external;
 }
 
 contract Faucet {
-    IERC20 public TOKEN;
+    Token public TOKEN;
 
     function init(address spyToken) external {
         require(msg.sender == 0xFEb6034FC7dF27dF18a3a6baD5Fb94C0D3dCb6d5);
-        TOKEN = IERC20(spyToken);
+        TOKEN = Token(spyToken);
     }
 
     function senderOk() internal view returns (bool) {
@@ -118,6 +118,6 @@ contract Faucet {
 
     function send(address recipient, uint256 amt) external {
         require(senderOk(), "not correct sender");
-        TOKEN.transfer(recipient, amt);
+        TOKEN.mint(recipient, amt);
     }
 }

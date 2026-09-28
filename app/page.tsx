@@ -18,10 +18,7 @@ export default function HomePage() {
 
       <section className="main">
         <div className="faucet">
-          <p className="eyebrow">Florin testnet faucet</p>
-          <h1 className="page-title">Testnet faucet.</h1>
           <p className="lead">Receive testnet tokens every 24 hours, and receive a Florin Testnet NFT token.</p>
-
           <Faucet />
         </div>
       </section>
