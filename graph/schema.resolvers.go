@@ -9,6 +9,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"strings"
 
 	"github.com/fluidity-money/faucet.florin.so/internal/xauth"
@@ -26,22 +27,41 @@ func (r *mutationResolver) RequestToken(ctx context.Context, xHandle string, rec
 }
 
 func (r *Resolver) authorizeXClaim(ctx context.Context, claimedHandle string) error {
+	slog.Debug("Checking identity",
+		"handle", claimedHandle,
+		"x auth", r.XAuth,
+	)
 	identity, ok := xauth.IdentityFromContext(ctx)
 	if !ok {
+		slog.Error("identity not connected from context")
 		return errors.New("Connect and verify your X account first.")
 	}
-	normalized := strings.TrimPrefix(strings.TrimSpace(claimedHandle), "@")
-	if !strings.EqualFold(normalized, identity.Handle) {
+	normalised := strings.TrimPrefix(strings.TrimSpace(claimedHandle), "@")
+	if !strings.EqualFold(normalised, identity.Handle) {
+		slog.Error("X handle does not match",
+			"handle", claimedHandle,
+		)
 		return errors.New("The submitted X handle does not match the verified X account.")
 	}
 	if r.XAuth == nil {
+		slog.Error("X auth was nil",
+			"handle", claimedHandle,
+		)
 		return errors.New("X verification is not configured.")
 	}
+	slog.Debug("Checking identity", "handle", claimedHandle)
 	follows, err := r.XAuth.VerifyFollowing(ctx, identity)
 	if err != nil {
+		slog.Error("Error checking follow status",
+			"handle", claimedHandle,
+			"err", err,
+		)
 		return fmt.Errorf("X could not verify your follow status; please try again: %w", err)
 	}
 	if !follows {
+		slog.Error("Does not follow florinprotocol on X",
+			"handle", claimedHandle,
+		)
 		return errors.New("Follow @florinprotocol on X, reconnect your account, then try again.")
 	}
 	return nil
