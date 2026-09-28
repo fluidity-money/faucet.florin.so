@@ -1,9 +1,11 @@
 package xauth
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
+	"log/slog"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -12,6 +14,23 @@ import (
 	"testing"
 	"time"
 )
+
+func TestWriteErrorLogsResponse(t *testing.T) {
+	var logs bytes.Buffer
+	previous := slog.Default()
+	slog.SetDefault(slog.New(slog.NewTextHandler(&logs, nil)))
+	t.Cleanup(func() { slog.SetDefault(previous) })
+
+	recorder := httptest.NewRecorder()
+	writeError(recorder, http.StatusBadGateway, "X request failed.")
+
+	logged := logs.String()
+	if !strings.Contains(logged, "level=ERROR") ||
+		!strings.Contains(logged, "status=502") ||
+		!strings.Contains(logged, `error="X request failed."`) {
+		t.Fatalf("writeError log = %q", logged)
+	}
+}
 
 const (
 	testRedirect = "https://faucet.florin.so/auth/x/callback"
