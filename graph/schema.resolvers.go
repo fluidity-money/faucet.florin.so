@@ -53,7 +53,7 @@ RETURNING id`,
 			"recipient", recipientAddress,
 			"x handle", xHandle,
 		)
-		return false, errors.New("failed to track")
+		return false, errors.New("Too many requests! Try again tomorrow.")
 	}
 	cd := append(
 		[]byte{0xd0, 0x67, 0x9d, 0x34, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},

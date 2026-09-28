@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.30;
 
-contract Faucet {
+contract MassSend {
     function massSend() external payable {
-        uint256 val = msg.value / 1e18;
+        uint256 val = msg.value / 100;
         address[100] memory addresses;
         addresses[0] = 0xFFe12cD2Ec51E9cb832ffc55627A79D7e4203Ef5;
         addresses[1] = 0xbd959435FB6c6C281dB6Ce6aF77bc1A802178655;
