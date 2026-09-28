@@ -10,6 +10,17 @@ type EthereumProvider = { request: (args: { method: string; params?: unknown[] }
 
 declare global { interface Window { ethereum?: EthereumProvider } }
 
+export function ClaimSuccess() {
+  return (
+    <div className="form-message success claim-success" role="status">
+      <span>Funds sent. Head back to Florin to open your position.</span>
+      <a className="btn btn--primary claim-success__cta" href="https://florin.so">
+        Go back to Florin<span aria-hidden="true">→</span>
+      </a>
+    </div>
+  );
+}
+
 export function Faucet() {
   const [session, setSession] = useState<XSession>({ authenticated: false });
   const [sessionLoading, setSessionLoading] = useState(true);
@@ -159,7 +170,11 @@ export function Faucet() {
         </div>
       </div>
 
-      {message && <div className={`form-message ${message.kind}`} role="status">{message.text}</div>}
+      {message?.kind === "success" ? (
+        <ClaimSuccess />
+      ) : message ? (
+        <div className="form-message error" role="status">{message.text}</div>
+      ) : null}
 
       <div className="faucet__actions">
         <span className="meta">One claim · verified X account</span>
