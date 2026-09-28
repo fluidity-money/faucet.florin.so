@@ -33,4 +33,7 @@ CREATE TABLE florin_faucet_amounts_sent_1 (
 CREATE UNIQUE INDEX florin_faucet_amounts_sent_1_recipient_day
 ON florin_faucet_amounts_sent_1 (recipient, (created_by::date));
 
+CREATE UNIQUE INDEX florin_faucet_amounts_sent_1_x_handle_day
+ON florin_faucet_amounts_sent_1 (x_handle, (created_by::date));
+
 -- migrate:down
