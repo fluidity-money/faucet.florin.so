@@ -7,6 +7,6 @@ import (
 )
 
 var (
-	FaucetAddr = ethCommon.HexToAddress("0x2916DD7fc1149f05eF2b462d1a3Ef4792929b550")
+	FaucetAddr = ethCommon.HexToAddress("0x1F3A25eC28c8E07c89591e30ed4fa19fFdE46C6D")
 	ChainId = new(big.Int).SetInt64(46630)
 )
