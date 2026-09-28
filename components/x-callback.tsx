@@ -32,7 +32,6 @@ export default function XCallbackPage() {
       <span className="brand-mark callback-mark" aria-hidden="true" />
       <p className="eyebrow">Florin / X verification</p>
       <h1>{error ? "Verification stopped." : "Verifying your account…"}</h1>
-      <p>{error || "Securely exchanging the one-time callback with the faucet."}</p>
       {error && <a className="pill-button dark" href="/">Return to faucet</a>}
     </main>
   );
