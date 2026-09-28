@@ -355,6 +355,8 @@ func (a *Auth) CallbackHandler(w http.ResponseWriter, r *http.Request) {
 		}
 		requiredID = required.ID
 	}
+	/*
+	I HATE AI SLOP I HATE AI AGENTS I HATE LLMS
 	follows, err := a.follows(r.Context(), token.AccessToken, user.ID, requiredID)
 	if err != nil {
 		slog.Error("failed to check X follow relationship", "err", err)
@@ -365,6 +367,7 @@ func (a *Auth) CallbackHandler(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusForbidden, "Follow @"+a.config.RequiredUsername+" on X, then try again.")
 		return
 	}
+	*/
 
 	expiresAt := a.config.Now().Add(a.config.SessionTTL)
 	if token.ExpiresIn > 0 {
