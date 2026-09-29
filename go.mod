@@ -27,7 +27,7 @@ require (
 	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.4.1 // indirect
 	github.com/ethereum/c-kzg-4844/v2 v2.1.8 // indirect
 	github.com/fjl/jsonw v0.1.0 // indirect
-	github.com/fluidity-money/accounts.superposition.so v0.0.0-20260928140807-9026ebb957c7 // indirect
+	github.com/fluidity-money/accounts.superposition.so v0.0.0-20260929134702-f96787d09163 // indirect
 	github.com/fluidity-money/superposition-assets v0.0.0-20260928112149-66e23e3ddffb // indirect
 	github.com/go-logr/logr v1.4.4 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
