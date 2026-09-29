@@ -18,7 +18,7 @@ export default function HomePage() {
 
       <section className="main">
         <div className="faucet">
-          <p className="lead">Receive testnet SPY every 24 hours, and receive a Florin Testnet NFT token.</p>
+          <p className="lead">Receive testnet SPY every 2 hours, and receive a Florin Testnet NFT token.</p>
           <Faucet />
         </div>
       </section>

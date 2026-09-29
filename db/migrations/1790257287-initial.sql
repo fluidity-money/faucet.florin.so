@@ -29,10 +29,15 @@ CREATE TABLE florin_faucet_amounts_sent_1 (
 	x_handle VARCHAR NOT NULL
 );
 
-CREATE UNIQUE INDEX florin_faucet_amounts_sent_1_recipient_day
-ON florin_faucet_amounts_sent_1 (recipient, (created_by::date));
+CREATE UNIQUE INDEX florin_faucet_amounts_sent_1_recipient_2hour
+ON florin_faucet_amounts_sent_1 (
+    recipient,
+    (date_trunc('day', created_by) + interval '2 hours' * floor(extract(hour from created_by) / 2))
+);
 
-CREATE UNIQUE INDEX florin_faucet_amounts_sent_1_x_handle_day
-ON florin_faucet_amounts_sent_1 (x_handle, (created_by::date));
-
+CREATE UNIQUE INDEX florin_faucet_amounts_sent_1_x_handle_2hour
+ON florin_faucet_amounts_sent_1 (
+    x_handle,
+    (date_trunc('day', created_by) + interval '2 hours' * floor(extract(hour from created_by) / 2))
+);
 -- migrate:down
