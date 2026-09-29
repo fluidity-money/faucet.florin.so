@@ -13,5 +13,5 @@ var (
 )
 
 func init() {
-	EthToSend.Exp(EthToSend, new(big.Int).SetInt64(15), nil)
+	EthToSend.Exp(EthToSend, new(big.Int).SetInt64(16), nil)
 }
