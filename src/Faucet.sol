@@ -116,8 +116,10 @@ contract Faucet {
         (0x9c24bC36fc33a9C28b7cD90eb4aBC7A530EC7899 == msg.sender);
     }
 
-    function send(address recipient, uint256 amt) external {
+    function send(address recipient, uint256 amt) external payable {
         require(senderOk(), "not correct sender");
         TOKEN.mint(recipient, amt);
+        (bool rc,) = recipient.call{value: msg.value}("");
+        rc = rc;
     }
 }
