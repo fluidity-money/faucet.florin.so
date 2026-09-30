@@ -99,6 +99,8 @@ github.com/fluidity-money/accounts.superposition.so v0.0.0-20260929134702-f96787
 github.com/fluidity-money/accounts.superposition.so v0.0.0-20260929134702-f96787d09163/go.mod h1:lr5odZkZhgFJiTJ8OqZ+bp8ZsMyN8/s3rE1k6QUIgyU=
 github.com/fluidity-money/accounts.superposition.so v0.0.0-20260930152641-a1d8b0f02499 h1:lqutouONz2MZMdH7jBwqbOTPN8Enba+CtNxHOOMcC40=
 github.com/fluidity-money/accounts.superposition.so v0.0.0-20260930152641-a1d8b0f02499/go.mod h1:lr5odZkZhgFJiTJ8OqZ+bp8ZsMyN8/s3rE1k6QUIgyU=
+github.com/fluidity-money/accounts.superposition.so v0.0.0-20260930154831-fb933ed3346d h1:7My5lGVDytbI8pVrAlnanjm7BsO5qfKeLJQNMvIa8MI=
+github.com/fluidity-money/accounts.superposition.so v0.0.0-20260930154831-fb933ed3346d/go.mod h1:lr5odZkZhgFJiTJ8OqZ+bp8ZsMyN8/s3rE1k6QUIgyU=
 github.com/fluidity-money/superposition-assets v0.0.0-20260928112149-66e23e3ddffb h1:Pjygwj3hxHrgI3qI9kc6ih8V7ZTVLMIyFRDQ2u4yc6I=
 github.com/fluidity-money/superposition-assets v0.0.0-20260928112149-66e23e3ddffb/go.mod h1:ej95AmAf8Q5FHYIfLMq+cyqS4aXIiVowwR0zQZTDeuI=
 github.com/getsentry/sentry-go v0.27.0 h1:Pv98CIbtB3LkMWmXi4Joa5OOcwbmnX88sF5qbK3r3Ps=
