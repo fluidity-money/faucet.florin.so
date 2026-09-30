@@ -130,7 +130,17 @@ export function Faucet() {
                 <button type="button" className="text-button" onClick={disconnectX}>Disconnect</button>
               </div>
             ) : (
-              <button type="button" className="btn btn--ghost" onClick={connectX} aria-labelledby="x-label">Connect X</button>
+              <div className="x-connect">
+                <a
+                  className="x-connect__follow"
+                  href="https://x.com/florinprotocol"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  Follow <strong>@florinprotocol</strong> on X first <span aria-hidden="true">↗</span>
+                </a>
+                <button type="button" className="btn btn--ghost" onClick={connectX} aria-labelledby="x-label">Then connect X</button>
+              </div>
             )}
           </div>
         </div>
@@ -177,7 +187,7 @@ export function Faucet() {
       ) : null}
 
       <div className="faucet__actions">
-        <span className="meta">One claim · verified X account</span>
+        <span className="meta">Follow @florinprotocol · verified X account</span>
         <button className="btn btn--primary btn--send" type="submit" disabled={!ready}>
           {pending ? "Sending…" : "Send tokens"}<span aria-hidden="true">→</span>
         </button>
