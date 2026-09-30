@@ -6,14 +6,14 @@ tool github.com/99designs/gqlgen
 
 require (
 	github.com/99designs/gqlgen v0.17.95
-	github.com/ethereum/go-ethereum v1.17.6
+	github.com/ethereum/go-ethereum v1.17.7
 	github.com/lib/pq v1.12.3
 	github.com/vektah/gqlparser/v2 v2.5.58
 )
 
 require (
 	github.com/Microsoft/go-winio v0.6.2 // indirect
-	github.com/ProjectZKM/Ziren/crates/go-runtime/zkvm_runtime v0.0.0-20260904015846-89a2b745b5c2 // indirect
+	github.com/ProjectZKM/Ziren/crates/go-runtime/zkvm_runtime v0.0.0-20260930021100-1f4573542fc8 // indirect
 	github.com/StackExchange/wmi v1.2.1 // indirect
 	github.com/agnivade/levenshtein v1.2.1 // indirect
 	github.com/aws/aws-lambda-go v1.55.1 // indirect
@@ -27,7 +27,7 @@ require (
 	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.4.1 // indirect
 	github.com/ethereum/c-kzg-4844/v2 v2.1.8 // indirect
 	github.com/fjl/jsonw v0.1.0 // indirect
-	github.com/fluidity-money/accounts.superposition.so v0.0.0-20260929134702-f96787d09163 // indirect
+	github.com/fluidity-money/accounts.superposition.so v0.0.0-20260930152641-a1d8b0f02499 // indirect
 	github.com/fluidity-money/superposition-assets v0.0.0-20260928112149-66e23e3ddffb // indirect
 	github.com/go-logr/logr v1.4.4 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect

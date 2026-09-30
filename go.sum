@@ -8,6 +8,8 @@ github.com/ProjectZKM/Ziren/crates/go-runtime/zkvm_runtime v0.0.0-20251001021608
 github.com/ProjectZKM/Ziren/crates/go-runtime/zkvm_runtime v0.0.0-20251001021608-1fe7b43fc4d6/go.mod h1:ioLG6R+5bUSO1oeGSDxOV3FADARuMoytZCSX6MEMQkI=
 github.com/ProjectZKM/Ziren/crates/go-runtime/zkvm_runtime v0.0.0-20260904015846-89a2b745b5c2 h1:U+GpMonqMve2A8Int541VdVG25ExuEWfOcXn7P4tUwA=
 github.com/ProjectZKM/Ziren/crates/go-runtime/zkvm_runtime v0.0.0-20260904015846-89a2b745b5c2/go.mod h1:ioLG6R+5bUSO1oeGSDxOV3FADARuMoytZCSX6MEMQkI=
+github.com/ProjectZKM/Ziren/crates/go-runtime/zkvm_runtime v0.0.0-20260930021100-1f4573542fc8 h1:7wsDnPWRSDAvK2mUSBH8O5+3e2sMa/joQ8UJR7jcVMs=
+github.com/ProjectZKM/Ziren/crates/go-runtime/zkvm_runtime v0.0.0-20260930021100-1f4573542fc8/go.mod h1:uO5tzF6zbEbGmzjjDjqrYuAdGqqGJYYYSGijnBePEeg=
 github.com/RaduBerinde/axisds v0.1.0 h1:YItk/RmU5nvlsv/awo2Fjx97Mfpt4JfgtEVAGPrLdz8=
 github.com/RaduBerinde/axisds v0.1.0/go.mod h1:UHGJonU9z4YYGKJxSaC6/TNcLOBptpmM5m2Cksbnw0Y=
 github.com/RaduBerinde/btreemap v0.0.0-20250419174037-3d62b7205d54 h1:bsU8Tzxr/PNz75ayvCnxKZWEYdLMPDkUgticP4a4Bvk=
@@ -85,6 +87,8 @@ github.com/ethereum/go-bigmodexpfix v0.0.0-20250911101455-f9e208c548ab h1:rvv6MJ
 github.com/ethereum/go-bigmodexpfix v0.0.0-20250911101455-f9e208c548ab/go.mod h1:IuLm4IsPipXKF7CW5Lzf68PIbZ5yl7FFd74l/E0o9A8=
 github.com/ethereum/go-ethereum v1.17.6 h1:27mdzjoN/bjz+rgjjZPGnD6E44W/Nd+vG+FKQFd/heg=
 github.com/ethereum/go-ethereum v1.17.6/go.mod h1:nl9wZjMuIjAottU6bq82UihXPbyY0jHHwkYXhnYhmU4=
+github.com/ethereum/go-ethereum v1.17.7 h1:jhoGxw/5aYPYUwEIfzfog0RcsiJuLA6SSqsHdhkx1tA=
+github.com/ethereum/go-ethereum v1.17.7/go.mod h1:nl9wZjMuIjAottU6bq82UihXPbyY0jHHwkYXhnYhmU4=
 github.com/ferranbt/fastssz v0.1.4 h1:OCDB+dYDEQDvAgtAGnTSidK1Pe2tW3nFV40XyMkTeDY=
 github.com/ferranbt/fastssz v0.1.4/go.mod h1:Ea3+oeoRGGLGm5shYAeDgu6PGUlcvQhE2fILyD9+tGg=
 github.com/fjl/jsonw v0.1.0 h1:V3MyR79fjLpn/+bMgvegdGUIhoJOzjmqWcKDgcOmY1I=
@@ -93,6 +97,8 @@ github.com/fluidity-money/accounts.superposition.so v0.0.0-20260928140807-9026eb
 github.com/fluidity-money/accounts.superposition.so v0.0.0-20260928140807-9026ebb957c7/go.mod h1:lr5odZkZhgFJiTJ8OqZ+bp8ZsMyN8/s3rE1k6QUIgyU=
 github.com/fluidity-money/accounts.superposition.so v0.0.0-20260929134702-f96787d09163 h1:xHwHgSlr+Gs1uiGMx9VpO4X4DT2yhCl0CPwjrDVcLxI=
 github.com/fluidity-money/accounts.superposition.so v0.0.0-20260929134702-f96787d09163/go.mod h1:lr5odZkZhgFJiTJ8OqZ+bp8ZsMyN8/s3rE1k6QUIgyU=
+github.com/fluidity-money/accounts.superposition.so v0.0.0-20260930152641-a1d8b0f02499 h1:lqutouONz2MZMdH7jBwqbOTPN8Enba+CtNxHOOMcC40=
+github.com/fluidity-money/accounts.superposition.so v0.0.0-20260930152641-a1d8b0f02499/go.mod h1:lr5odZkZhgFJiTJ8OqZ+bp8ZsMyN8/s3rE1k6QUIgyU=
 github.com/fluidity-money/superposition-assets v0.0.0-20260928112149-66e23e3ddffb h1:Pjygwj3hxHrgI3qI9kc6ih8V7ZTVLMIyFRDQ2u4yc6I=
 github.com/fluidity-money/superposition-assets v0.0.0-20260928112149-66e23e3ddffb/go.mod h1:ej95AmAf8Q5FHYIfLMq+cyqS4aXIiVowwR0zQZTDeuI=
 github.com/getsentry/sentry-go v0.27.0 h1:Pv98CIbtB3LkMWmXi4Joa5OOcwbmnX88sF5qbK3r3Ps=
