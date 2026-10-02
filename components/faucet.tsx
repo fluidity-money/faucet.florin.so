@@ -1,11 +1,10 @@
 "use client";
 
-import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
+import { FormEvent, useCallback, useMemo, useState } from "react";
 import { readFaucetResult } from "@/lib/graphql";
 import { isEthereumAddress } from "@/lib/validation";
 import { Turnstile } from "./turnstile";
 
-type XSession = { authenticated: boolean; handle?: string };
 type EthereumProvider = { request: (args: { method: string; params?: unknown[] }) => Promise<unknown> };
 
 declare global { interface Window { ethereum?: EthereumProvider } }
@@ -22,48 +21,11 @@ export function ClaimSuccess() {
 }
 
 export function Faucet() {
-  const [session, setSession] = useState<XSession>({ authenticated: false });
-  const [sessionLoading, setSessionLoading] = useState(true);
   const [address, setAddress] = useState("");
   const [turnstileToken, setTurnstileToken] = useState("");
   const [resetKey, setResetKey] = useState(0);
   const [pending, setPending] = useState(false);
   const [message, setMessage] = useState<{ kind: "error" | "success"; text: string } | null>(null);
-
-  useEffect(() => {
-    fetch("/api/x/session", { cache: "no-store" })
-      .then((response) => response.json())
-      .then((value) => setSession(value.authenticated ? value : { authenticated: false }))
-      .catch(() => setSession({ authenticated: false }))
-      .finally(() => setSessionLoading(false));
-  }, []);
-
-  const xConnected = Boolean(session.authenticated && session.handle);
-
-  const connectX = async () => {
-    setMessage(null);
-    try {
-      const response = await fetch("/api/x/start?returnTo=/", { cache: "no-store" });
-      const result = await response.json();
-      if (!response.ok || !result.authorizationUrl) throw new Error(result.error || "X verification is unavailable.");
-      window.location.assign(result.authorizationUrl);
-    } catch (reason) {
-      setMessage({ kind: "error", text: reason instanceof Error ? reason.message : "Could not connect X." });
-    }
-  };
-
-  const clearXSession = async () => {
-    setSession({ authenticated: false });
-    setAddress("");
-    setTurnstileToken("");
-    setResetKey((value) => value + 1);
-    await fetch("/api/x/session", { method: "DELETE" }).catch(() => undefined);
-  };
-
-  const disconnectX = async () => {
-    await clearXSession();
-    setMessage(null);
-  };
 
   const connectWallet = async () => {
     setMessage(null);
@@ -81,24 +43,23 @@ export function Faucet() {
 
   const onToken = useCallback((token: string) => setTurnstileToken(token), []);
   const ready = useMemo(
-    () => Boolean(xConnected && isEthereumAddress(address) && turnstileToken && !pending),
-    [address, pending, turnstileToken, xConnected],
+    () => Boolean(isEthereumAddress(address) && turnstileToken && !pending),
+    [address, pending, turnstileToken],
   );
 
   const submit = async (event: FormEvent) => {
     event.preventDefault();
-    if (!ready || !session.handle) return;
+    if (!ready) return;
     setPending(true);
     setMessage(null);
     try {
       const response = await fetch("/api/faucet", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ xHandle: session.handle, recipientAddress: address.trim(), turnstileToken }),
+        body: JSON.stringify({ recipientAddress: address.trim(), turnstileToken }),
       });
       const result = await response.json().catch(() => ({}));
       const parsed = readFaucetResult(result);
-      if (!parsed.ok && parsed.authenticationRequired) await clearXSession();
       if (!response.ok) throw new Error(result.error || (!parsed.ok && parsed.message) || "The request failed.");
       if (!parsed.ok) throw new Error(parsed.message);
       setMessage({ kind: "success", text: "Request accepted. Your testnet funds are on the way." });
@@ -120,32 +81,6 @@ export function Faucet() {
 
       <div className="fields">
         <div className="field">
-          <span className="field__label" id="x-label">X account</span>
-          <div className="field__control">
-            {sessionLoading ? (
-              <span className="skeleton">Checking…</span>
-            ) : session.authenticated && session.handle ? (
-              <div className="field__value">
-                <strong>@{session.handle}</strong>
-                <button type="button" className="text-button" onClick={disconnectX}>Disconnect</button>
-              </div>
-            ) : (
-              <div className="x-connect">
-                <a
-                  className="x-connect__follow"
-                  href="https://x.com/florinprotocol"
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  Follow <strong>@florinprotocol</strong> on X first <span aria-hidden="true">↗</span>
-                </a>
-                <button type="button" className="btn btn--ghost" onClick={connectX} aria-labelledby="x-label">Then connect X</button>
-              </div>
-            )}
-          </div>
-        </div>
-
-        <div className={`field${xConnected ? "" : " field--locked"}`} aria-disabled={!xConnected}>
           <span className="field__label" id="addr-label">Send to</span>
           <div className="field__control">
             <div className="addr">
@@ -157,25 +92,20 @@ export function Faucet() {
                 placeholder="0x…"
                 autoComplete="off"
                 spellCheck={false}
-                disabled={!xConnected}
                 aria-invalid={Boolean(address && !isEthereumAddress(address))}
                 aria-labelledby="addr-label"
               />
               {address && isEthereumAddress(address) && <span className="addr__ok" aria-hidden="true">✓</span>}
-              <button type="button" className="addr__btn" onClick={connectWallet} disabled={!xConnected}>Connect wallet</button>
+              <button type="button" className="addr__btn" onClick={connectWallet}>Connect wallet</button>
             </div>
           </div>
           {address && !isEthereumAddress(address) && <small className="field-error">Enter a 42-character EVM address.</small>}
         </div>
 
-        <div className={`field${xConnected ? "" : " field--locked"}`} aria-disabled={!xConnected}>
+        <div className="field">
           <span className="field__label" id="human-label">Human check</span>
           <div className="field__control">
-            {xConnected ? (
-              <Turnstile onToken={onToken} resetKey={resetKey} />
-            ) : (
-              <span className="field-lock">Connect X to continue.</span>
-            )}
+            <Turnstile onToken={onToken} resetKey={resetKey} />
           </div>
         </div>
       </div>
@@ -187,7 +117,7 @@ export function Faucet() {
       ) : null}
 
       <div className="faucet__actions">
-        <span className="meta">Follow @florinprotocol · verified X account</span>
+        <span className="meta">One claim per address every 2 hours</span>
         <button className="btn btn--primary btn--send" type="submit" disabled={!ready}>
           {pending ? "Sending…" : "Send tokens"}<span aria-hidden="true">→</span>
         </button>

@@ -1,7 +1,6 @@
 
 type Mutation {
   requestToken(
-      xHandle: String!,
       recipientAddress: String!,
       turnstileToken: String!
   ): Boolean!

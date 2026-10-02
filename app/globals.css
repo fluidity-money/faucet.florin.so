@@ -110,20 +110,6 @@ a:focus-visible, button:focus-visible, input:focus-visible {
   background: var(--phthalo);
   box-shadow: 0 0 0 4px var(--mint);
 }
-.x-link {
-  font-weight: 600;
-  text-decoration: underline;
-  text-decoration-thickness: 1px;
-  text-underline-offset: 4px;
-}
-.x-link:hover { color: var(--phthalo); }
-.x-link--header {
-  margin-left: auto;
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
 
 /* ---- page ---------------------------------------------------------------- */
 .main {
@@ -248,22 +234,6 @@ a:focus-visible, button:focus-visible, input:focus-visible {
 .btn--ghost:hover:not(:disabled) { background: var(--ink); color: var(--paper); }
 .btn--primary { background: var(--ink); color: var(--paper); }
 
-/* X account */
-.x-connect {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  flex-wrap: wrap;
-}
-.x-connect__follow {
-  color: var(--phthalo);
-  font-size: 13px;
-  line-height: 1.35;
-  text-decoration: underline;
-  text-underline-offset: 3px;
-}
-.x-connect__follow strong { font-weight: 700; }
-.x-connect__follow:hover { color: var(--ink); }
 .field__value { display: flex; align-items: center; gap: 12px; font-size: 15px; }
 .field__value strong { font-weight: 600; }
 .field__value small { color: var(--gray-3); font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; }

@@ -511,7 +511,7 @@ CREATE TABLE public.florin_faucet_amounts_sent_1 (
     id integer NOT NULL,
     created_by timestamp without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
     recipient public.address NOT NULL,
-    x_handle character varying NOT NULL,
+    x_handle character varying,
     transaction_hash public.hash NOT NULL
 );
 

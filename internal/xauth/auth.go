@@ -15,7 +15,6 @@ import (
 	"log/slog"
 	"net/http"
 	"net/url"
-	"path"
 	"strings"
 	"sync"
 	"time"
@@ -27,8 +26,6 @@ const (
 	transactionPurpose    = "florin-x-oauth-transaction-v1"
 	sessionPurpose        = "florin-x-session-v1"
 	maxResponseBytes      = 1 << 20
-	maxFollowingPages     = 25
-	followingCheckTimeout = 20 * time.Second
 )
 
 var ErrUnauthenticated = errors.New("X session is missing or invalid")
@@ -38,8 +35,6 @@ type Config struct {
 	ClientSecret     string
 	SessionSecret    string
 	AllowedRedirects []string
-	RequiredUsername string
-	RequiredUserID   string
 	AuthorizeURL     string
 	TokenURL         string
 	APIBaseURL       string
@@ -60,12 +55,11 @@ type Auth struct {
 }
 
 type Identity struct {
-	SessionID      string
-	UserID         string
-	Handle         string
-	AccessToken    string
-	RequiredUserID string
-	ExpiresAt      time.Time
+	SessionID   string
+	UserID      string
+	Handle      string
+	AccessToken string
+	ExpiresAt   time.Time
 }
 
 type identityContextKey struct{}
@@ -104,12 +98,11 @@ type transaction struct {
 }
 
 type session struct {
-	SessionID      string `json:"session_id"`
-	UserID         string `json:"user_id"`
-	Handle         string `json:"handle"`
-	AccessToken    string `json:"access_token"`
-	RequiredUserID string `json:"required_user_id"`
-	ExpiresAt      int64  `json:"expires_at"`
+	SessionID   string `json:"session_id"`
+	UserID      string `json:"user_id"`
+	Handle      string `json:"handle"`
+	AccessToken string `json:"access_token"`
+	ExpiresAt   int64  `json:"expires_at"`
 }
 
 type callbackRequest struct {
@@ -133,17 +126,8 @@ type userResponse struct {
 	Data xUser `json:"data"`
 }
 
-type followingResponse struct {
-	Data []xUser `json:"data"`
-	Meta struct {
-		NextToken string `json:"next_token"`
-	} `json:"meta"`
-}
-
 func New(config Config) (*Auth, error) {
 	config.ClientID = strings.TrimSpace(config.ClientID)
-	config.RequiredUsername = strings.TrimPrefix(strings.TrimSpace(config.RequiredUsername), "@")
-	config.RequiredUserID = strings.TrimSpace(config.RequiredUserID)
 	if config.ClientID == "" {
 		slog.Error("X client ID is required")
 		return nil, errors.New("X client ID is required")
@@ -156,10 +140,7 @@ func New(config Config) (*Auth, error) {
 		slog.Error("at least one X redirect URI is required")
 		return nil, errors.New("at least one X redirect URI is required")
 	}
-	if config.RequiredUsername == "" && config.RequiredUserID == "" {
-		slog.Error("required X username or user ID is required")
-		return nil, errors.New("required X username or user ID is required")
-	}
+
 	if config.AuthorizeURL == "" {
 		config.AuthorizeURL = "https://x.com/i/oauth2/authorize"
 	}
@@ -281,7 +262,7 @@ func (a *Auth) StartHandler(w http.ResponseWriter, r *http.Request) {
 	query.Set("response_type", "code")
 	query.Set("client_id", a.config.ClientID)
 	query.Set("redirect_uri", redirectURI)
-	query.Set("scope", "tweet.read users.read follows.read")
+	query.Set("scope", "tweet.read users.read")
 	query.Set("state", state)
 	query.Set("code_challenge", challenge)
 	query.Set("code_challenge_method", "S256")
@@ -345,30 +326,6 @@ func (a *Auth) CallbackHandler(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadGateway, "Could not read your X account. Please try again.")
 		return
 	}
-	requiredID := a.config.RequiredUserID
-	if requiredID == "" {
-		required, lookupErr := a.userByUsername(r.Context(), token.AccessToken, a.config.RequiredUsername)
-		if lookupErr != nil {
-			slog.Error("failed to resolve required X user", "err", lookupErr)
-			writeError(w, http.StatusBadGateway, "Could not verify the required X account. Please try again.")
-			return
-		}
-		requiredID = required.ID
-	}
-	/*
-	I HATE AI SLOP I HATE AI AGENTS I HATE LLMS
-	follows, err := a.follows(r.Context(), token.AccessToken, user.ID, requiredID)
-	if err != nil {
-		slog.Error("failed to check X follow relationship", "err", err)
-		writeError(w, http.StatusBadGateway, "Could not check who you follow on X. Please try again.")
-		return
-	}
-	if !follows {
-		writeError(w, http.StatusForbidden, "Follow @"+a.config.RequiredUsername+" on X, then try again.")
-		return
-	}
-	*/
-
 	expiresAt := a.config.Now().Add(a.config.SessionTTL)
 	if token.ExpiresIn > 0 {
 		tokenExpiry := a.config.Now().Add(time.Duration(token.ExpiresIn) * time.Second)
@@ -383,12 +340,11 @@ func (a *Auth) CallbackHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	payload := session{
-		SessionID:      sessionID,
-		UserID:         user.ID,
-		Handle:         user.Username,
-		AccessToken:    token.AccessToken,
-		RequiredUserID: requiredID,
-		ExpiresAt:      expiresAt.Unix(),
+		SessionID:   sessionID,
+		UserID:      user.ID,
+		Handle:      user.Username,
+		AccessToken: token.AccessToken,
+		ExpiresAt:   expiresAt.Unix(),
 	}
 	value, err := a.seal(sessionPurpose, payload)
 	if err != nil {
@@ -453,27 +409,18 @@ func (a *Auth) Identity(r *http.Request) (Identity, error) {
 	var stored session
 	openErr := a.open(sessionPurpose, cookie.Value, &stored)
 	if openErr != nil || stored.ExpiresAt <= a.config.Now().Unix() ||
-		stored.SessionID == "" || stored.UserID == "" || stored.Handle == "" || stored.AccessToken == "" || stored.RequiredUserID == "" ||
+		stored.SessionID == "" || stored.UserID == "" || stored.Handle == "" || stored.AccessToken == "" ||
 		a.sessionIsRevoked(stored.SessionID) {
 		slog.Error("X session cookie is invalid, expired, incomplete, or revoked", "err", openErr)
 		return Identity{}, ErrUnauthenticated
 	}
 	return Identity{
-		SessionID:      stored.SessionID,
-		UserID:         stored.UserID,
-		Handle:         stored.Handle,
-		AccessToken:    stored.AccessToken,
-		RequiredUserID: stored.RequiredUserID,
-		ExpiresAt:      time.Unix(stored.ExpiresAt, 0),
+		SessionID:   stored.SessionID,
+		UserID:      stored.UserID,
+		Handle:      stored.Handle,
+		AccessToken: stored.AccessToken,
+		ExpiresAt:   time.Unix(stored.ExpiresAt, 0),
 	}, nil
-}
-
-func (a *Auth) VerifyFollowing(ctx context.Context, identity Identity) (bool, error) {
-	if identity.UserID == "" || identity.AccessToken == "" || identity.RequiredUserID == "" {
-		slog.Error("cannot verify X following for an incomplete identity")
-		return false, ErrUnauthenticated
-	}
-	return a.follows(ctx, identity.AccessToken, identity.UserID, identity.RequiredUserID)
 }
 
 func (a *Auth) exchangeCode(ctx context.Context, code, verifier, redirectURI string) (tokenResponse, error) {
@@ -518,57 +465,6 @@ func (a *Auth) currentUser(ctx context.Context, accessToken string) (xUser, erro
 		return xUser{}, errors.New("X user response is incomplete")
 	}
 	return response.Data, nil
-}
-
-func (a *Auth) userByUsername(ctx context.Context, accessToken, username string) (xUser, error) {
-	var response userResponse
-	endpoint := "/users/by/username/" + url.PathEscape(username)
-	if err := a.apiGET(ctx, accessToken, endpoint, nil, &response); err != nil {
-		slog.Error("failed to fetch required X user", "err", err)
-		return xUser{}, err
-	}
-	if response.Data.ID == "" {
-		slog.Error("required X user was not found")
-		return xUser{}, errors.New("required X user was not found")
-	}
-	return response.Data, nil
-}
-
-func (a *Auth) follows(ctx context.Context, accessToken, sourceUserID, targetUserID string) (bool, error) {
-	ctx, cancel := context.WithTimeout(ctx, followingCheckTimeout)
-	defer cancel()
-
-	paginationToken := ""
-	seen := make(map[string]struct{})
-	for pageNumber := 0; pageNumber < maxFollowingPages; pageNumber++ {
-		query := url.Values{"max_results": {"1000"}}
-		if paginationToken != "" {
-			query.Set("pagination_token", paginationToken)
-		}
-		var response followingResponse
-		endpoint := path.Join("/users", url.PathEscape(sourceUserID), "following")
-		if err := a.apiGET(ctx, accessToken, endpoint, query, &response); err != nil {
-			slog.Error("failed to fetch X following page", "err", err, "page", pageNumber+1)
-			return false, err
-		}
-		for _, followed := range response.Data {
-			if subtle.ConstantTimeCompare([]byte(followed.ID), []byte(targetUserID)) == 1 {
-				return true, nil
-			}
-		}
-		next := response.Meta.NextToken
-		if next == "" {
-			return false, nil
-		}
-		if _, duplicate := seen[next]; duplicate {
-			slog.Error("X returned a pagination cycle")
-			return false, errors.New("X returned a pagination cycle")
-		}
-		seen[next] = struct{}{}
-		paginationToken = next
-	}
-	slog.Error("X following pagination exceeded its limit", "limit", maxFollowingPages)
-	return false, errors.New("X following pagination exceeded its limit")
 }
 
 func (a *Auth) apiGET(ctx context.Context, accessToken, endpoint string, query url.Values, destination any) error {

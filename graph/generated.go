@@ -36,7 +36,7 @@ type DirectiveRoot struct {
 
 type ComplexityRoot struct {
 	Mutation struct {
-		RequestToken func(childComplexity int, xHandle string, recipientAddress string, turnstileToken string) int
+		RequestToken func(childComplexity int, recipientAddress string, turnstileToken string) int
 	}
 
 	Query struct {
@@ -48,7 +48,7 @@ type ComplexityRoot struct {
 // region    ************************** generated!.gotpl **************************
 
 type MutationResolver interface {
-	RequestToken(ctx context.Context, xHandle string, recipientAddress string, turnstileToken string) (bool, error)
+	RequestToken(ctx context.Context, recipientAddress string, turnstileToken string) (bool, error)
 }
 
 // endregion ************************** generated!.gotpl **************************
@@ -79,7 +79,7 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.ComplexityRoot.Mutation.RequestToken(childComplexity, args["xHandle"].(string), args["recipientAddress"].(string), args["turnstileToken"].(string)), true
+		return e.ComplexityRoot.Mutation.RequestToken(childComplexity, args["recipientAddress"].(string), args["turnstileToken"].(string)), true
 
 	}
 	return 0, false
@@ -301,30 +301,22 @@ func (ec *executionContext) childFields___Type(ctx context.Context, field graphq
 func (ec *executionContext) field_Mutation_requestToken_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "xHandle",
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "recipientAddress",
 		func(ctx context.Context, v any) (string, error) {
 			return ec.unmarshalNString2string(ctx, v)
 		})
 	if err != nil {
 		return nil, err
 	}
-	args["xHandle"] = arg0
-	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "recipientAddress",
+	args["recipientAddress"] = arg0
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "turnstileToken",
 		func(ctx context.Context, v any) (string, error) {
 			return ec.unmarshalNString2string(ctx, v)
 		})
 	if err != nil {
 		return nil, err
 	}
-	args["recipientAddress"] = arg1
-	arg2, err := graphql.ProcessArgField(ctx, rawArgs, "turnstileToken",
-		func(ctx context.Context, v any) (string, error) {
-			return ec.unmarshalNString2string(ctx, v)
-		})
-	if err != nil {
-		return nil, err
-	}
-	args["turnstileToken"] = arg2
+	args["turnstileToken"] = arg1
 	return args, nil
 }
 
@@ -412,7 +404,7 @@ func (ec *executionContext) _Mutation_requestToken(ctx context.Context, field gr
 		},
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.Resolvers.Mutation().RequestToken(ctx, fc.Args["xHandle"].(string), fc.Args["recipientAddress"].(string), fc.Args["turnstileToken"].(string))
+			return ec.Resolvers.Mutation().RequestToken(ctx, fc.Args["recipientAddress"].(string), fc.Args["turnstileToken"].(string))
 		},
 		nil,
 		func(ctx context.Context, selections ast.SelectionSet, v bool) graphql.Marshaler {

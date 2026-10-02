@@ -27,15 +27,13 @@ import (
 )
 
 const (
-	EnvTurnstileSecret  = "SPN_TURNSTILE_SECRET"
-	EnvGethAddr         = "SPN_ROBINHOOD_URL"
-	EnvTimescaleURI     = "SPN_TIMESCALE"
-	EnvXClientID        = "SPN_X_CLIENT_ID"
-	EnvXClientSecret    = "SPN_X_CLIENT_SECRET"
-	EnvXSessionSecret   = "SPN_X_SESSION_SECRET"
-	EnvXRedirectURIs    = "SPN_X_REDIRECT_URIS"
-	EnvXRequiredUserID  = "SPN_X_REQUIRED_USER_ID"
-	EnvXRequiredAccount = "SPN_X_REQUIRED_USERNAME"
+	EnvTurnstileSecret = "SPN_TURNSTILE_SECRET"
+	EnvGethAddr        = "SPN_ROBINHOOD_URL"
+	EnvTimescaleURI    = "SPN_TIMESCALE"
+	EnvXClientID       = "SPN_X_CLIENT_ID"
+	EnvXClientSecret   = "SPN_X_CLIENT_SECRET"
+	EnvXSessionSecret  = "SPN_X_SESSION_SECRET"
+	EnvXRedirectURIs   = "SPN_X_REDIRECT_URIS"
 )
 
 const HttpUnixSocket = "/run/faucet.florin.so/http.sock"
@@ -46,17 +44,11 @@ func main() {
 		log.Fatal("turnstile unset")
 	}
 
-	requiredAccount := strings.TrimSpace(os.Getenv(EnvXRequiredAccount))
-	if requiredAccount == "" {
-		requiredAccount = "florinprotocol"
-	}
 	xAuthenticator, err := xauth.New(xauth.Config{
 		ClientID:         os.Getenv(EnvXClientID),
 		ClientSecret:     os.Getenv(EnvXClientSecret),
 		SessionSecret:    os.Getenv(EnvXSessionSecret),
 		AllowedRedirects: splitCommaSeparated(os.Getenv(EnvXRedirectURIs)),
-		RequiredUsername: requiredAccount,
-		RequiredUserID:   os.Getenv(EnvXRequiredUserID),
 		SessionTTL:       2 * time.Hour,
 		TransactionTTL:   10 * time.Minute,
 	})
@@ -79,7 +71,6 @@ func main() {
 			TurnstileSecret: turnstileSecret,
 			Db:              db,
 			Client:          client,
-			XAuth:           xAuthenticator,
 		},
 	}))
 	srv.AddTransport(transport.Options{})

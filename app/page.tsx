@@ -13,25 +13,13 @@ export default function HomePage() {
             <span className="network-pill__dot" aria-hidden="true" />
             Robinhood Chain testnet
           </span>
-          <a
-            className="x-link x-link--header"
-            href="https://x.com/florinprotocol"
-            target="_blank"
-            rel="noreferrer"
-          >
-            Follow @florinprotocol on X <span aria-hidden="true">↗</span>
-          </a>
         </div>
       </header>
 
       <section className="main">
         <div className="faucet">
           <p className="lead">
-            Receive testnet SPY and 0.01 ETH every 2 hours. Follow{" "}
-            <a className="x-link" href="https://x.com/florinprotocol" target="_blank" rel="noreferrer">
-              @florinprotocol on X
-            </a>{" "}
-            to claim.
+            Receive testnet SPY and 0.01 ETH every 2 hours.
           </p>
           <Faucet />
         </div>
@@ -43,7 +31,6 @@ export default function HomePage() {
           <nav className="site-footer__nav" aria-label="Footer">
             <a href="https://florin.so">Florin</a>
             <a href="https://superposition.so">Superposition</a>
-            <a href="https://x.com/florinprotocol" target="_blank" rel="noreferrer">@florinprotocol on X ↗</a>
           </nav>
         </div>
       </footer>

@@ -1,5 +1,4 @@
 export type FaucetVariables = {
-  xHandle: string;
   recipientAddress: string;
   turnstileToken: string;
 };
@@ -12,12 +11,10 @@ type FaucetResponse = {
 
 export const REQUEST_TOKEN_MUTATION = `
   mutation RequestToken(
-    $xHandle: String!
     $recipientAddress: String!
     $turnstileToken: String!
   ) {
     requestToken(
-      xHandle: $xHandle
       recipientAddress: $recipientAddress
       turnstileToken: $turnstileToken
     )
@@ -34,19 +31,14 @@ export function buildFaucetRequest(variables: FaucetVariables) {
 
 export function readFaucetResult(response: FaucetResponse):
   | { ok: true }
-  | { ok: false; message: string; authenticationRequired: boolean } {
+  | { ok: false; message: string } {
   const message = response.errors?.find((error) => error.message)?.message;
   if (message) {
-    return {
-      ok: false,
-      message,
-      authenticationRequired: message === "Connect and verify your X account first.",
-    };
+    return { ok: false, message };
   }
   if (response.data?.requestToken === true) return { ok: true };
   return {
     ok: false,
     message: "The faucet did not accept this request.",
-    authenticationRequired: false,
   };
 }

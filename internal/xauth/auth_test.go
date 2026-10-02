@@ -2,7 +2,6 @@ package xauth
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
 	"errors"
 	"log/slog"
@@ -43,8 +42,6 @@ func testConfig(apiURL string) Config {
 		ClientSecret:     "client-secret",
 		SessionSecret:    testSecret,
 		AllowedRedirects: []string{testRedirect},
-		RequiredUsername: "florinprotocol",
-		RequiredUserID:   "999",
 		AuthorizeURL:     apiURL + "/authorize",
 		TokenURL:         apiURL + "/token",
 		APIBaseURL:       apiURL,
@@ -73,7 +70,7 @@ func startLogin(t *testing.T, auth *Auth) (*http.Cookie, string) {
 		t.Fatal(err)
 	}
 	query := authorizationURL.Query()
-	if query.Get("scope") != "tweet.read users.read follows.read" {
+	if query.Get("scope") != "tweet.read users.read" {
 		t.Fatalf("scope = %q", query.Get("scope"))
 	}
 	if query.Get("code_challenge_method") != "S256" || query.Get("code_challenge") == "" {
@@ -110,9 +107,8 @@ func TestStartHandlerRejectsUnlistedRedirect(t *testing.T) {
 	}
 }
 
-func TestCallbackVerifiesFollowAcrossAllPagesAndCreatesSession(t *testing.T) {
+func TestCallbackCreatesSession(t *testing.T) {
 	var tokenCalls atomic.Int32
-	var followingCalls atomic.Int32
 	api := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch {
 		case r.URL.Path == "/token":
@@ -130,14 +126,6 @@ func TestCallbackVerifiesFollowAcrossAllPagesAndCreatesSession(t *testing.T) {
 		case r.URL.Path == "/users/me":
 			assertBearer(t, r, "user-token")
 			writeTestJSON(w, http.StatusOK, map[string]any{"data": map[string]string{"id": "123", "username": "alice"}})
-		case r.URL.Path == "/users/123/following":
-			assertBearer(t, r, "user-token")
-			followingCalls.Add(1)
-			if r.URL.Query().Get("pagination_token") == "next-page" {
-				writeTestJSON(w, http.StatusOK, map[string]any{"data": []map[string]string{{"id": "999", "username": "florinprotocol"}}, "meta": map[string]any{"result_count": 1}})
-				return
-			}
-			writeTestJSON(w, http.StatusOK, map[string]any{"data": []map[string]string{{"id": "456", "username": "someone"}}, "meta": map[string]any{"result_count": 1, "next_token": "next-page"}})
 		default:
 			http.NotFound(w, r)
 		}
@@ -158,8 +146,8 @@ func TestCallbackVerifiesFollowAcrossAllPagesAndCreatesSession(t *testing.T) {
 	if recorder.Code != http.StatusOK {
 		t.Fatalf("callback status = %d, body = %s", recorder.Code, recorder.Body.String())
 	}
-	if tokenCalls.Load() != 1 || followingCalls.Load() != 2 {
-		t.Fatalf("token calls = %d, following calls = %d", tokenCalls.Load(), followingCalls.Load())
+	if tokenCalls.Load() != 1 {
+		t.Fatalf("token calls = %d", tokenCalls.Load())
 	}
 	var sessionCookie *http.Cookie
 	for _, cookie := range recorder.Result().Cookies() {
@@ -216,8 +204,6 @@ func TestCallbackTransactionCanOnlyBeConsumedOnce(t *testing.T) {
 			writeTestJSON(w, http.StatusOK, map[string]any{"access_token": "user-token", "token_type": "bearer", "expires_in": 7200})
 		case "/users/me":
 			writeTestJSON(w, http.StatusOK, map[string]any{"data": map[string]string{"id": "123", "username": "alice"}})
-		case "/users/123/following":
-			writeTestJSON(w, http.StatusOK, map[string]any{"data": []map[string]string{{"id": "999"}}})
 		default:
 			http.NotFound(w, r)
 		}
@@ -243,39 +229,6 @@ func TestCallbackTransactionCanOnlyBeConsumedOnce(t *testing.T) {
 	}
 	if tokenCalls.Load() != 1 {
 		t.Fatalf("token exchanges = %d", tokenCalls.Load())
-	}
-}
-
-func TestCallbackRejectsUserWhoDoesNotFollowFlorin(t *testing.T) {
-	api := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		switch r.URL.Path {
-		case "/token":
-			writeTestJSON(w, http.StatusOK, map[string]any{"access_token": "user-token", "token_type": "bearer", "expires_in": 7200})
-		case "/users/me":
-			writeTestJSON(w, http.StatusOK, map[string]any{"data": map[string]string{"id": "123", "username": "alice"}})
-		case "/users/123/following":
-			writeTestJSON(w, http.StatusOK, map[string]any{"meta": map[string]any{"result_count": 0}})
-		default:
-			http.NotFound(w, r)
-		}
-	}))
-	defer api.Close()
-	auth, err := New(testConfig(api.URL))
-	if err != nil {
-		t.Fatal(err)
-	}
-	cookie, state := startLogin(t, auth)
-	req := httptest.NewRequest(http.MethodPost, "/auth/x/callback", strings.NewReader(`{"code":"code","state":"`+state+`","redirectUri":"`+testRedirect+`"}`))
-	req.AddCookie(cookie)
-	recorder := httptest.NewRecorder()
-	auth.CallbackHandler(recorder, req)
-	if recorder.Code != http.StatusForbidden || !strings.Contains(recorder.Body.String(), "@florinprotocol") {
-		t.Fatalf("response = %d %s", recorder.Code, recorder.Body.String())
-	}
-	for _, responseCookie := range recorder.Result().Cookies() {
-		if responseCookie.Name == sessionCookieName && responseCookie.Value != "" {
-			t.Fatal("non-follower received a session")
-		}
 	}
 }
 
@@ -308,28 +261,13 @@ func TestCallbackRejectsStateMismatchBeforeTokenExchange(t *testing.T) {
 	}
 }
 
-func TestVerifyFollowingFailsClosedOnRateLimit(t *testing.T) {
-	api := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		writeTestJSON(w, http.StatusTooManyRequests, map[string]string{"title": "Too Many Requests"})
-	}))
-	defer api.Close()
-	auth, err := New(testConfig(api.URL))
-	if err != nil {
-		t.Fatal(err)
-	}
-	following, err := auth.VerifyFollowing(context.Background(), Identity{UserID: "123", AccessToken: "token", RequiredUserID: "999"})
-	if err == nil || following {
-		t.Fatalf("following = %v, err = %v", following, err)
-	}
-}
-
 func TestMiddlewareAddsAValidIdentityToTheRequestContext(t *testing.T) {
 	auth, err := New(testConfig("https://api.x.test"))
 	if err != nil {
 		t.Fatal(err)
 	}
 	value, err := auth.seal(sessionPurpose, session{
-		SessionID: "session-1", UserID: "123", Handle: "alice", AccessToken: "token", RequiredUserID: "999",
+		SessionID: "session-1", UserID: "123", Handle: "alice", AccessToken: "token",
 		ExpiresAt: auth.config.Now().Add(time.Hour).Unix(),
 	})
 	if err != nil {
