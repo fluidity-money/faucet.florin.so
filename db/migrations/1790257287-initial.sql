@@ -26,7 +26,7 @@ CREATE TABLE florin_faucet_amounts_sent_1 (
 	id SERIAL PRIMARY KEY,
 	created_by TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 	recipient ADDRESS NOT NULL,
-	x_handle VARCHAR NOT NULL
+	x_handle VARCHAR
 );
 
 CREATE UNIQUE INDEX florin_faucet_amounts_sent_1_recipient_2hour
@@ -35,9 +35,4 @@ ON florin_faucet_amounts_sent_1 (
     (date_trunc('day', created_by) + interval '2 hours' * floor(extract(hour from created_by) / 2))
 );
 
-CREATE UNIQUE INDEX florin_faucet_amounts_sent_1_x_handle_2hour
-ON florin_faucet_amounts_sent_1 (
-    x_handle,
-    (date_trunc('day', created_by) + interval '2 hours' * floor(extract(hour from created_by) / 2))
-);
 -- migrate:down
