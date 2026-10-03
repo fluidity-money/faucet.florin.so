@@ -8,12 +8,12 @@ require (
 	github.com/99designs/gqlgen v0.17.95
 	github.com/ethereum/go-ethereum v1.17.7
 	github.com/lib/pq v1.12.3
-	github.com/vektah/gqlparser/v2 v2.5.58
+	github.com/vektah/gqlparser/v2 v2.5.60
 )
 
 require (
 	github.com/Microsoft/go-winio v0.6.2 // indirect
-	github.com/ProjectZKM/Ziren/crates/go-runtime/zkvm_runtime v0.0.0-20260930021100-1f4573542fc8 // indirect
+	github.com/ProjectZKM/Ziren/crates/go-runtime/zkvm_runtime v0.0.0-20261003000859-10d23b1344e4 // indirect
 	github.com/StackExchange/wmi v1.2.1 // indirect
 	github.com/agnivade/levenshtein v1.2.1 // indirect
 	github.com/aws/aws-lambda-go v1.55.1 // indirect
@@ -21,14 +21,14 @@ require (
 	github.com/bits-and-blooms/bitset v1.25.0 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/coder/websocket v1.8.15 // indirect
-	github.com/consensys/gnark-crypto v0.21.0 // indirect
+	github.com/consensys/gnark-crypto v0.22.0 // indirect
 	github.com/crate-crypto/go-eth-kzg v1.5.0 // indirect
 	github.com/deckarep/golang-set/v2 v2.9.0 // indirect
 	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.4.1 // indirect
 	github.com/ethereum/c-kzg-4844/v2 v2.1.8 // indirect
 	github.com/fjl/jsonw v0.1.0 // indirect
-	github.com/fluidity-money/accounts.superposition.so v0.0.0-20260930154831-fb933ed3346d // indirect
-	github.com/fluidity-money/superposition-assets v0.0.0-20260928112149-66e23e3ddffb // indirect
+	github.com/fluidity-money/accounts.superposition.so v0.0.0-20261003115715-a52d401f54b5 // indirect
+	github.com/fluidity-money/superposition-assets v0.0.0-20261002160639-e69f1628bca5 // indirect
 	github.com/go-logr/logr v1.4.4 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/go-ole/go-ole v1.3.0 // indirect
@@ -48,12 +48,13 @@ require (
 	github.com/yusufpapurcu/wmi v1.2.4 // indirect
 	go.mongodb.org/mongo-driver v1.17.10 // indirect
 	go.opentelemetry.io/auto/sdk v1.2.1 // indirect
-	go.opentelemetry.io/otel v1.46.0 // indirect
-	go.opentelemetry.io/otel/metric v1.46.0 // indirect
-	go.opentelemetry.io/otel/trace v1.46.0 // indirect
-	golang.org/x/mod v0.40.0 // indirect
+	go.opentelemetry.io/otel v1.47.0 // indirect
+	go.opentelemetry.io/otel/log v1.47.0 // indirect
+	go.opentelemetry.io/otel/metric v1.47.0 // indirect
+	go.opentelemetry.io/otel/trace v1.47.0 // indirect
+	golang.org/x/mod v0.41.0 // indirect
 	golang.org/x/sync v0.23.0 // indirect
 	golang.org/x/sys v0.48.0 // indirect
-	golang.org/x/text v0.41.0 // indirect
-	golang.org/x/tools v0.49.0 // indirect
+	golang.org/x/text v0.42.0 // indirect
+	golang.org/x/tools v0.50.0 // indirect
 )
