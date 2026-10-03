@@ -5,8 +5,14 @@ interface Token {
     function mint(address to, uint256 amount) external;
 }
 
+interface IWETH {
+    function transfer(address recipient, uint256 amt) external;
+}
+
 contract Faucet {
     Token public TOKEN;
+
+    IWETH public immutable WETH = IWETH(0x7943e237c7F95DA44E0301572D358911207852Fa);
 
     function init(address spyToken) external {
         require(msg.sender == 0xFEb6034FC7dF27dF18a3a6baD5Fb94C0D3dCb6d5);
@@ -121,5 +127,10 @@ contract Faucet {
         TOKEN.mint(recipient, amt);
         (bool rc,) = recipient.call{value: msg.value}("");
         rc = rc;
+    }
+
+    function receiveWeth(uint256 _amt) external {
+        require(senderOk(), "not correct sender");
+        WETH.transfer(msg.sender, _amt);
     }
 }

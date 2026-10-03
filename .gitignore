@@ -6,3 +6,4 @@ out/
 .env.*.local
 *.tsbuildinfo
 faucet.florin.so
+cache
