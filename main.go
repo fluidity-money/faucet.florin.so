@@ -27,13 +27,14 @@ import (
 )
 
 const (
-	EnvTurnstileSecret = "SPN_TURNSTILE_SECRET"
-	EnvGethAddr        = "SPN_ROBINHOOD_URL"
-	EnvTimescaleURI    = "SPN_TIMESCALE"
-	EnvXClientID       = "SPN_X_CLIENT_ID"
-	EnvXClientSecret   = "SPN_X_CLIENT_SECRET"
-	EnvXSessionSecret  = "SPN_X_SESSION_SECRET"
-	EnvXRedirectURIs   = "SPN_X_REDIRECT_URIS"
+	EnvTurnstileSecret    = "SPN_TURNSTILE_SECRET"
+	EnvTurnstileHostnames = "SPN_TURNSTILE_HOSTNAMES"
+	EnvGethAddr           = "SPN_ROBINHOOD_URL"
+	EnvTimescaleURI       = "SPN_TIMESCALE"
+	EnvXClientID          = "SPN_X_CLIENT_ID"
+	EnvXClientSecret      = "SPN_X_CLIENT_SECRET"
+	EnvXSessionSecret     = "SPN_X_SESSION_SECRET"
+	EnvXRedirectURIs      = "SPN_X_REDIRECT_URIS"
 )
 
 const HttpUnixSocket = "/run/faucet.florin.so/http.sock"
@@ -42,6 +43,13 @@ func main() {
 	turnstileSecret := os.Getenv(EnvTurnstileSecret)
 	if turnstileSecret == "" {
 		log.Fatal("turnstile unset")
+	}
+	turnstile, err := graph.NewTurnstileVerifier(
+		turnstileSecret,
+		splitCommaSeparated(os.Getenv(EnvTurnstileHostnames)),
+	)
+	if err != nil {
+		log.Fatalf("configure Turnstile: %v", err)
 	}
 
 	xAuthenticator, err := xauth.New(xauth.Config{
@@ -68,9 +76,9 @@ func main() {
 	defer db.Close()
 	srv := handler.New(graph.NewExecutableSchema(graph.Config{
 		Resolvers: &graph.Resolver{
-			TurnstileSecret: turnstileSecret,
-			Db:              db,
-			Client:          client,
+			Turnstile: turnstile,
+			Db:        db,
+			Client:    client,
 		},
 	}))
 	srv.AddTransport(transport.Options{})

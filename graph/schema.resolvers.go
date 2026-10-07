@@ -18,12 +18,15 @@ import (
 
 // RequestToken is the resolver for the requestToken field.
 func (r *mutationResolver) RequestToken(ctx context.Context, recipientAddress string, turnstileToken string) (bool, error) {
-	amt := new(big.Int).SetInt64(10)
-	amt.Exp(amt, new(big.Int).SetInt64(18), nil)
 	recipientAddr, err := canonicalRecipientAddress(recipientAddress)
 	if err != nil {
 		return false, err
 	}
+	if err := r.Turnstile.Verify(ctx, turnstileToken); err != nil {
+		return false, err
+	}
+	amt := new(big.Int).SetInt64(10)
+	amt.Exp(amt, new(big.Int).SetInt64(18), nil)
 	privKey, sender, err := acc_db.PickPrivateKey(ctx, r.Db)
 	if err != nil {
 		log.Fatalf("error picking private key: %v", err)

@@ -14,22 +14,26 @@ declare global {
 
 type Props = { onToken: (token: string) => void; resetKey: number };
 
+export const TURNSTILE_SITE_KEY = "0x4AAAAAAFCW3wdeeOUrUHOs";
+export const TURNSTILE_ACTION = "faucet";
+
 export function Turnstile({ onToken, resetKey }: Props) {
-  const siteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
   const elementRef = useRef<HTMLDivElement>(null);
   const widgetRef = useRef<string | null>(null);
   const id = useId().replace(/:/g, "");
 
   useEffect(() => {
-    if (!siteKey) return;
     const render = () => {
       if (!elementRef.current || !window.turnstile || widgetRef.current) return;
       widgetRef.current = window.turnstile.render(elementRef.current, {
-        sitekey: siteKey,
+        sitekey: TURNSTILE_SITE_KEY,
+        action: TURNSTILE_ACTION,
         theme: "light",
         size: "flexible",
+        "response-field": false,
         callback: (token: string) => onToken(token),
         "expired-callback": () => onToken(""),
+        "timeout-callback": () => onToken(""),
         "error-callback": () => onToken(""),
       });
     };
@@ -48,12 +52,11 @@ export function Turnstile({ onToken, resetKey }: Props) {
       if (widgetRef.current && window.turnstile) window.turnstile.remove(widgetRef.current);
       widgetRef.current = null;
     };
-  }, [id, onToken, siteKey]);
+  }, [id, onToken]);
 
   useEffect(() => {
     if (widgetRef.current && window.turnstile) window.turnstile.reset(widgetRef.current);
   }, [resetKey]);
 
-  if (!siteKey) return <p className="config-note">Human verification is temporarily unavailable.</p>;
   return <div id={`turnstile-${id}`} ref={elementRef} className="turnstile" />;
 }

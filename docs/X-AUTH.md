@@ -32,12 +32,13 @@ SPN_X_REDIRECT_URIS=http://localhost:3000/auth/x/callback,https://faucet.florin.
 The existing backend variables are still required:
 
 ```text
-SPN_TURNSTILE_SECRET=[REDACTED]
+SPN_TURNSTILE_SECRET=***
+SPN_TURNSTILE_HOSTNAMES=faucet.florin.so
 SPN_ROBINHOOD_URL=[REDACTED]
 SPN_TIMESCALE=[REDACTED]
 ```
 
-Keep all of these variables server-side. Only `NEXT_PUBLIC_TURNSTILE_SITE_KEY` belongs in the browser bundle.
+Keep all of these variables server-side. The public Turnstile site key is embedded in `components/turnstile.tsx`.
 
 ## HTTP contract
 
