@@ -57,6 +57,8 @@ RETURNING id`,
 	)
 	hash, _, err := acc_client.Send(ctx,
 		r.Client,
+		[20]byte{},
+		false,
 		ChainId,
 		privKey,
 		*sender,

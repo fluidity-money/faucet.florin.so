@@ -97,13 +97,13 @@ func main() {
 	mux.HandleFunc("/auth/x/session", xAuthenticator.SessionHandler)
 	mux.Handle("/query", xAuthenticator.Middleware(srv))
 	mux.Handle("/", xAuthenticator.Middleware(srv))
-
 	_ = os.Remove(HttpUnixSocket)
 	listener, err := net.Listen("unix", HttpUnixSocket)
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer listener.Close()
+	_ = os.Chmod(HttpUnixSocket, 0x0777)
 	log.Printf("faucet listening on unix://%s", HttpUnixSocket)
 	log.Fatal(http.Serve(listener, mux))
 }
