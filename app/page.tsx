@@ -18,6 +18,10 @@ export default function HomePage() {
 
       <section className="main">
         <div className="faucet">
+          <p className="notice" role="status">
+            The faucet is out of ETH right now. You can still try to claim, but
+            it may not go through.
+          </p>
           <p className="lead">
             Receive testnet SPY and 0.01 ETH every 2 hours.
           </p>

@@ -144,6 +144,17 @@ a:focus-visible, button:focus-visible, input:focus-visible {
   line-height: 0.98;
   text-wrap: balance;
 }
+/* Temporary status banner above the lead, e.g. when the faucet runs dry. */
+.notice {
+  width: 100%;
+  margin: 0 0 24px;
+  border-left: 4px solid #9a352e;
+  padding: 11px 13px;
+  background: #f1d9d5;
+  font-size: 14px;
+  line-height: 1.45;
+  text-align: left;
+}
 .lead {
   margin: 20px 0 0;
   max-width: 520px;
