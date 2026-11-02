@@ -1,6 +1,10 @@
 import { Faucet } from "@/components/faucet";
+import { LOW_ETH_WEI, faucetEthBalance } from "@/lib/faucet-balance";
 
-export default function HomePage() {
+export default async function HomePage() {
+  const ethBalance = await faucetEthBalance();
+  const lowOnEth = ethBalance !== null && ethBalance < LOW_ETH_WEI;
+
   return (
     <main>
       <header className="site-header">
@@ -18,10 +22,12 @@ export default function HomePage() {
 
       <section className="main">
         <div className="faucet">
-          <p className="notice" role="status">
-            The faucet is out of ETH right now. You can still try to claim, but
-            it may not go through.
-          </p>
+          {lowOnEth && (
+            <p className="notice" role="status">
+              The faucet is out of ETH right now. You can still try to claim,
+              but it may not go through.
+            </p>
+          )}
           <p className="lead">
             Receive testnet SPY and 0.01 ETH every 2 hours.
           </p>
