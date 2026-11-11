@@ -64,7 +64,7 @@ RETURNING id`,
 		*sender,
 		FaucetAddr,
 		cd,
-		EthToSend,
+		nil,
 		false,
 	)
 	if err != nil {
