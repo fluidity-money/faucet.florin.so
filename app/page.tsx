@@ -29,7 +29,7 @@ export default async function HomePage() {
             </p>
           )}
           <p className="lead">
-            Receive testnet SPY and 0.01 ETH every 2 hours.
+            Receive 100 testnet SPY every 2 hours.
           </p>
           <Faucet />
         </div>
