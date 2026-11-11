@@ -25,7 +25,7 @@ func (r *mutationResolver) RequestToken(ctx context.Context, recipientAddress st
 	if err := r.Turnstile.Verify(ctx, turnstileToken); err != nil {
 		return false, err
 	}
-	amt := new(big.Int).SetInt64(10)
+	amt := new(big.Int).SetInt64(100)
 	amt.Exp(amt, new(big.Int).SetInt64(18), nil)
 	privKey, sender, err := acc_db.PickPrivateKey(ctx, r.Db)
 	if err != nil {
