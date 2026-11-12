@@ -9,9 +9,8 @@ import (
 	"context"
 	"errors"
 	"log"
-	"strings"
 	"log/slog"
-	"math/big"
+	"strings"
 
 	acc_client "github.com/fluidity-money/accounts.superposition.so/lib/client"
 	acc_db "github.com/fluidity-money/accounts.superposition.so/lib/db"
@@ -23,8 +22,6 @@ func (r *mutationResolver) RequestToken(ctx context.Context, recipientAddress st
 	if err != nil {
 		return false, err
 	}
-	amt := new(big.Int).Exp(new(big.Int).SetInt64(10), new(big.Int).SetInt64(18), nil)
-	amt.Mul(amt, new(big.Int).SetInt64(100))
 	privKey, sender, err := acc_db.PickPrivateKey(ctx, r.Db)
 	if err != nil {
 		log.Fatalf("error picking private key: %v", err)
@@ -46,13 +43,7 @@ RETURNING id`,
 		)
 		return false, errors.New("Too many requests! Try again in two hours.")
 	}
-	cd := append(
-		[]byte{0xd0, 0x67, 0x9d, 0x34, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
-		append(
-			recipientAddr[:],
-			[]byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x8a, 0xc7, 0x23, 0x04, 0x89, 0xe8, 0x00, 0x00}...,
-		)...,
-	)
+	cd := faucetCalldata(recipientAddr)
 	hash, _, err := acc_client.Send(ctx,
 		r.Client,
 		[20]byte{},
