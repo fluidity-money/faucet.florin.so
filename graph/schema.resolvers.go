@@ -24,7 +24,7 @@ func (r *mutationResolver) RequestToken(ctx context.Context, recipientAddress st
 		return false, err
 	}
 	amt := new(big.Int).Exp(new(big.Int).SetInt64(10), new(big.Int).SetInt64(18), nil)
-	amt.Mul(amt, new(big.Int).SetInt64(10))
+	amt.Mul(amt, new(big.Int).SetInt64(100))
 	privKey, sender, err := acc_db.PickPrivateKey(ctx, r.Db)
 	if err != nil {
 		log.Fatalf("error picking private key: %v", err)
