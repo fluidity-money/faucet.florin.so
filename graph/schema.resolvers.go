@@ -9,6 +9,7 @@ import (
 	"context"
 	"errors"
 	"log"
+	"strings"
 	"log/slog"
 	"math/big"
 
@@ -35,7 +36,7 @@ func (r *mutationResolver) RequestToken(ctx context.Context, recipientAddress st
 INSERT INTO florin_faucet_amounts_sent_1 (recipient)
 VALUES ($1)
 RETURNING id`,
-		recipientAddr.Hex(),
+		strings.ToLower(recipientAddr.Hex()),
 	)
 	var id int
 	if err := row.Scan(&id); err != nil {
