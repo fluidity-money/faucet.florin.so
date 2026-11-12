@@ -1,0 +1,21 @@
+[Unit]
+Description=Florin Faucet
+Requires=faucet-florin.socket
+After=faucet-florin.socket
+
+[Service]
+Type=simple
+User=
+Group=
+EnvironmentFile=/etc/fluidity-apps/robinhood-testnet.conf
+ExecStart=/usr/local/bin/faucet-florin
+Restart=on-failure
+RestartSec=3s
+
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectHome=yes
+ProtectSystem=strict
+
+[Install]
+WantedBy=multi-user.target

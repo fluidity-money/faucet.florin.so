@@ -7,3 +7,4 @@ out/
 *.tsbuildinfo
 faucet.florin.so
 cache
+florin-faucet
