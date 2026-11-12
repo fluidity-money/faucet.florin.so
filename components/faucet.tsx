@@ -1,9 +1,8 @@
 "use client";
 
-import { FormEvent, useCallback, useMemo, useState } from "react";
+import { FormEvent, useState } from "react";
 import { readFaucetResult } from "@/lib/graphql";
 import { isEthereumAddress } from "@/lib/validation";
-import { Turnstile } from "./turnstile";
 
 type EthereumProvider = { request: (args: { method: string; params?: unknown[] }) => Promise<unknown> };
 
@@ -22,8 +21,6 @@ export function ClaimSuccess() {
 
 export function Faucet() {
   const [address, setAddress] = useState("");
-  const [turnstileToken, setTurnstileToken] = useState("");
-  const [resetKey, setResetKey] = useState(0);
   const [pending, setPending] = useState(false);
   const [message, setMessage] = useState<{ kind: "error" | "success"; text: string } | null>(null);
 
@@ -41,11 +38,7 @@ export function Faucet() {
     }
   };
 
-  const onToken = useCallback((token: string) => setTurnstileToken(token), []);
-  const ready = useMemo(
-    () => Boolean(isEthereumAddress(address) && turnstileToken && !pending),
-    [address, pending, turnstileToken],
-  );
+  const ready = isEthereumAddress(address) && !pending;
 
   const submit = async (event: FormEvent) => {
     event.preventDefault();
@@ -56,7 +49,7 @@ export function Faucet() {
       const response = await fetch("/api/faucet", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ recipientAddress: address.trim(), turnstileToken }),
+        body: JSON.stringify({ recipientAddress: address.trim() }),
       });
       const result = await response.json().catch(() => ({}));
       const parsed = readFaucetResult(result);
@@ -67,8 +60,6 @@ export function Faucet() {
       setMessage({ kind: "error", text: reason instanceof Error ? reason.message : "The faucet request failed." });
     } finally {
       setPending(false);
-      setTurnstileToken("");
-      setResetKey((value) => value + 1);
     }
   };
 
@@ -100,13 +91,6 @@ export function Faucet() {
             </div>
           </div>
           {address && !isEthereumAddress(address) && <small className="field-error">Enter a 42-character EVM address.</small>}
-        </div>
-
-        <div className="field">
-          <span className="field__label" id="human-label">Human check</span>
-          <div className="field__control">
-            <Turnstile onToken={onToken} resetKey={resetKey} />
-          </div>
         </div>
       </div>
 

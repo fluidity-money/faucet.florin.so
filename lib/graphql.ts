@@ -1,6 +1,5 @@
 export type FaucetVariables = {
   recipientAddress: string;
-  turnstileToken: string;
 };
 
 type GraphQLError = { message?: string };
@@ -12,11 +11,9 @@ type FaucetResponse = {
 export const REQUEST_TOKEN_MUTATION = `
   mutation RequestToken(
     $recipientAddress: String!
-    $turnstileToken: String!
   ) {
     requestToken(
       recipientAddress: $recipientAddress
-      turnstileToken: $turnstileToken
     )
   }
 `;

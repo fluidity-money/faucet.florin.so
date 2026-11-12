@@ -17,12 +17,9 @@ import (
 )
 
 // RequestToken is the resolver for the requestToken field.
-func (r *mutationResolver) RequestToken(ctx context.Context, recipientAddress string, turnstileToken string) (bool, error) {
+func (r *mutationResolver) RequestToken(ctx context.Context, recipientAddress string) (bool, error) {
 	recipientAddr, err := canonicalRecipientAddress(recipientAddress)
 	if err != nil {
-		return false, err
-	}
-	if err := r.Turnstile.Verify(ctx, turnstileToken); err != nil {
 		return false, err
 	}
 	amt := new(big.Int).SetInt64(100)

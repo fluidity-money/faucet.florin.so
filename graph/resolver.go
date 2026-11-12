@@ -7,7 +7,6 @@ import (
 )
 
 type Resolver struct {
-	Db        *sql.DB
-	Turnstile *TurnstileVerifier
-	Client    *ethclient.Client
+	Db     *sql.DB
+	Client *ethclient.Client
 }

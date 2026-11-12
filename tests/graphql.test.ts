@@ -5,7 +5,6 @@ import { buildFaucetRequest, readFaucetResult } from "../lib/graphql";
 test("builds the requestToken GraphQL operation expected by gqlgen", () => {
   const body = buildFaucetRequest({
     recipientAddress: "0x000000000000000000000000000000000000dEaD",
-    turnstileToken: "turnstile-proof",
   });
 
   assert.equal(body.operationName, "RequestToken");
@@ -13,7 +12,6 @@ test("builds the requestToken GraphQL operation expected by gqlgen", () => {
   assert.doesNotMatch(body.query, /xHandle/);
   assert.deepEqual(body.variables, {
     recipientAddress: "0x000000000000000000000000000000000000dEaD",
-    turnstileToken: "turnstile-proof",
   });
 });
 

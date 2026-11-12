@@ -36,7 +36,7 @@ type DirectiveRoot struct {
 
 type ComplexityRoot struct {
 	Mutation struct {
-		RequestToken func(childComplexity int, recipientAddress string, turnstileToken string) int
+		RequestToken func(childComplexity int, recipientAddress string) int
 	}
 
 	Query struct {
@@ -48,7 +48,7 @@ type ComplexityRoot struct {
 // region    ************************** generated!.gotpl **************************
 
 type MutationResolver interface {
-	RequestToken(ctx context.Context, recipientAddress string, turnstileToken string) (bool, error)
+	RequestToken(ctx context.Context, recipientAddress string) (bool, error)
 }
 
 // endregion ************************** generated!.gotpl **************************
@@ -79,7 +79,7 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.ComplexityRoot.Mutation.RequestToken(childComplexity, args["recipientAddress"].(string), args["turnstileToken"].(string)), true
+		return e.ComplexityRoot.Mutation.RequestToken(childComplexity, args["recipientAddress"].(string)), true
 
 	}
 	return 0, false
@@ -309,14 +309,6 @@ func (ec *executionContext) field_Mutation_requestToken_args(ctx context.Context
 		return nil, err
 	}
 	args["recipientAddress"] = arg0
-	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "turnstileToken",
-		func(ctx context.Context, v any) (string, error) {
-			return ec.unmarshalNString2string(ctx, v)
-		})
-	if err != nil {
-		return nil, err
-	}
-	args["turnstileToken"] = arg1
 	return args, nil
 }
 
@@ -404,7 +396,7 @@ func (ec *executionContext) _Mutation_requestToken(ctx context.Context, field gr
 		},
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.Resolvers.Mutation().RequestToken(ctx, fc.Args["recipientAddress"].(string), fc.Args["turnstileToken"].(string))
+			return ec.Resolvers.Mutation().RequestToken(ctx, fc.Args["recipientAddress"].(string))
 		},
 		nil,
 		func(ctx context.Context, selections ast.SelectionSet, v bool) graphql.Marshaler {

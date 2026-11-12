@@ -32,13 +32,11 @@ SPN_X_REDIRECT_URIS=http://localhost:3000/auth/x/callback,https://faucet.florin.
 The existing backend variables are still required:
 
 ```text
-SPN_TURNSTILE_SECRET=***
-SPN_TURNSTILE_HOSTNAMES=faucet.florin.so
 SPN_ROBINHOOD_URL=[REDACTED]
 SPN_TIMESCALE=[REDACTED]
 ```
 
-Keep all of these variables server-side. The public Turnstile site key is embedded in `components/turnstile.tsx`.
+Keep all of these variables server-side.
 
 ## HTTP contract
 
@@ -70,7 +68,7 @@ Expires the session cookie and returns `{ "authenticated": false }`.
 The claim mutation is independent of X:
 
 ```graphql
-requestToken(recipientAddress: String!, turnstileToken: String!): Boolean!
+requestToken(recipientAddress: String!): Boolean!
 ```
 
 The faucet stores `NULL` in `x_handle` for these claims. Address and time-window abuse controls remain unchanged.
