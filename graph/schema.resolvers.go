@@ -44,7 +44,7 @@ RETURNING id`,
 			"err", err,
 			"recipient", recipientAddress,
 		)
-		return false, errors.New("Too many requests! Try again tomorrow.")
+		return false, errors.New("Too many requests! Try again in two hours.")
 	}
 	cd := append(
 		[]byte{0xd0, 0x67, 0x9d, 0x34, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
