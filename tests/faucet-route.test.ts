@@ -13,7 +13,7 @@ test("claims require only a valid recipient address", async (t) => {
 	});
   const recipientAddress = "0x000000000000000000000000000000000000dEaD";
   const upstream = t.mock.method(globalThis, "fetch", async (url: unknown, options?: RequestInit) => {
-		assert.equal(url, "https://graph.superposition.so/robinhood-testnet/florin/faucet");
+		assert.equal(url, "https://graph.superposition.so/robinhood-testnet/florin/faucet/");
 		assert.equal(options?.method, "POST");
     assert.deepEqual(JSON.parse(String(options?.body)), buildFaucetRequest({ recipientAddress }));
     return Response.json({ data: { requestToken: true } });

@@ -12,7 +12,7 @@ export async function POST(request: NextRequest) {
   if (!isEthereumAddress(recipientAddress)) return NextResponse.json({ error: "Enter a valid EVM address." }, { status: 400 });
 
   try {
-    const upstream = await fetch(graphBaseUrl(), {
+    const upstream = await fetch(`${graphBaseUrl()}/`, {
       method: "POST",
       headers: forwardedHeaders(request, true),
       body: JSON.stringify(buildFaucetRequest({ recipientAddress })),
