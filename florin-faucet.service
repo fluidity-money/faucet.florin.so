@@ -1,7 +1,7 @@
 [Unit]
 Description=Florin Faucet
-Requires=faucet-florin.socket
-After=faucet-florin.socket
+Requires=florin-faucet.socket
+After=florin-faucet.socket
 
 [Service]
 Type=simple
