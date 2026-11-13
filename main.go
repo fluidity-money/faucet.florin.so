@@ -37,8 +37,6 @@ const (
 	EnvXRedirectURIs  = "SPN_X_REDIRECT_URIS"
 )
 
-const HttpUnixSocket = "/run/faucet.florin.so/http.sock"
-
 func main() {
 	xAuthenticator, err := xauth.New(xauth.Config{
 		ClientID:         os.Getenv(EnvXClientID),
