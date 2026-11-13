@@ -5,8 +5,16 @@ import { POST } from "../app/api/faucet/route";
 import { buildFaucetRequest } from "../lib/graphql";
 
 test("claims require only a valid recipient address", async (t) => {
+	const previousUrl = process.env.FAUCET_GRAPH_URL;
+	process.env.FAUCET_GRAPH_URL = "";
+	t.after(() => {
+		if (previousUrl === undefined) delete process.env.FAUCET_GRAPH_URL;
+		else process.env.FAUCET_GRAPH_URL = previousUrl;
+	});
   const recipientAddress = "0x000000000000000000000000000000000000dEaD";
-  const upstream = t.mock.method(globalThis, "fetch", async (_url: unknown, options?: RequestInit) => {
+  const upstream = t.mock.method(globalThis, "fetch", async (url: unknown, options?: RequestInit) => {
+		assert.equal(url, "https://graph.superposition.so/robinhood-testnet/florin/faucet");
+		assert.equal(options?.method, "POST");
     assert.deepEqual(JSON.parse(String(options?.body)), buildFaucetRequest({ recipientAddress }));
     return Response.json({ data: { requestToken: true } });
   });

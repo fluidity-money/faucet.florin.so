@@ -5,7 +5,7 @@ package main
 import (
 	"database/sql"
 	"log"
-	"net"
+	"sync"
 	"net/http"
 	"os"
 	"strings"
@@ -21,6 +21,8 @@ import (
 	"github.com/99designs/gqlgen/graphql/playground"
 
 	"github.com/vektah/gqlparser/v2/ast"
+
+	"github.com/coreos/go-systemd/v22/activation"
 
 	"github.com/ethereum/go-ethereum/ethclient"
 	_ "github.com/lib/pq"
@@ -82,15 +84,17 @@ func main() {
 	mux.HandleFunc("/auth/x/session", xAuthenticator.SessionHandler)
 	mux.Handle("/query", xAuthenticator.Middleware(srv))
 	mux.Handle("/", xAuthenticator.Middleware(srv))
-	_ = os.Remove(HttpUnixSocket)
-	listener, err := net.Listen("unix", HttpUnixSocket)
+	l, err := activation.Listeners()
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("listeners: %v", err)
 	}
-	defer listener.Close()
-	_ = os.Chmod(HttpUnixSocket, 0x0777)
-	log.Printf("faucet listening on unix://%s", HttpUnixSocket)
-	log.Fatal(http.Serve(listener, mux))
+	var wg sync.WaitGroup
+	for _, l := range l {
+		wg.Go(func() {
+			panic(http.Serve(l, nil))
+		})
+	}
+	wg.Wait()
 }
 
 func splitCommaSeparated(value string) []string {
