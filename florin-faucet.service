@@ -8,7 +8,7 @@ Type=simple
 User=
 Group=
 EnvironmentFile=/etc/fluidity-apps/robinhood-testnet.conf
-ExecStart=/usr/local/bin/faucet-florin
+ExecStart=/usr/local/bin/florin-faucet
 Restart=on-failure
 RestartSec=3s
 
