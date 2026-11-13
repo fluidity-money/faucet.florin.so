@@ -1,6 +1,6 @@
 import type { NextRequest } from "next/server";
 
-const DEFAULT_GRAPH_URL = "https://faucet-graph.florin.so";
+const DEFAULT_GRAPH_URL = "https://graph.superposition.so/robinhood-testnet/florin/faucet";
 
 export function graphBaseUrl(): string {
   return (process.env.FAUCET_GRAPH_URL || DEFAULT_GRAPH_URL).replace(/\/$/, "");
