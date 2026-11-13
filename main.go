@@ -18,7 +18,6 @@ import (
 	"github.com/99designs/gqlgen/graphql/handler/extension"
 	"github.com/99designs/gqlgen/graphql/handler/lru"
 	"github.com/99designs/gqlgen/graphql/handler/transport"
-	"github.com/99designs/gqlgen/graphql/playground"
 
 	"github.com/vektah/gqlparser/v2/ast"
 
@@ -76,11 +75,9 @@ func main() {
 	})
 
 	mux := http.NewServeMux()
-	mux.Handle("/playground", playground.Handler("GraphQL playground", "/query"))
 	mux.HandleFunc("/auth/x/start", xAuthenticator.StartHandler)
 	mux.HandleFunc("/auth/x/callback", xAuthenticator.CallbackHandler)
 	mux.HandleFunc("/auth/x/session", xAuthenticator.SessionHandler)
-	mux.Handle("/query", xAuthenticator.Middleware(srv))
 	mux.Handle("/", xAuthenticator.Middleware(srv))
 	l, err := activation.Listeners()
 	if err != nil {
@@ -89,7 +86,7 @@ func main() {
 	var wg sync.WaitGroup
 	for _, l := range l {
 		wg.Go(func() {
-			panic(http.Serve(l, nil))
+			panic(http.Serve(l, mux))
 		})
 	}
 	wg.Wait()
