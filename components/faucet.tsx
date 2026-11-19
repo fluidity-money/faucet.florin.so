@@ -66,7 +66,7 @@ export function Faucet() {
   return (
     <form className="faucet-panel" onSubmit={submit}>
       <div className="faucet__rule">
-        <span className="rule-pill"><span className="rule-pill__clock">◷</span> Once per 24h</span>
+        <span className="rule-pill"><span className="rule-pill__clock">◷</span> Every 2 hours</span>
         <span className="rule-text">Free testnet funds for your address.</span>
       </div>
 
