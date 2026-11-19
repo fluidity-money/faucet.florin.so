@@ -29,7 +29,16 @@ export default async function HomePage() {
             </p>
           )}
           <p className="lead">
-            Receive 100 testnet SPY every 2 hours.
+            Receive 100 testnet SPY every 2 hours. Need ETH for gas? Get it
+            from the{" "}
+            <a
+              href="https://faucet.testnet.chain.robinhood.com/"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Robinhood Chain faucet
+            </a>
+            .
           </p>
           <Faucet />
         </div>

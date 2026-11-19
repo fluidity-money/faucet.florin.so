@@ -163,6 +163,11 @@ a:focus-visible, button:focus-visible, input:focus-visible {
   line-height: 1.5;
   text-wrap: pretty;
 }
+.lead a {
+  color: var(--ink);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
 
 /* ---- claim panel ---------------------------------------------------------- */
 .faucet-panel {
